@@ -640,6 +640,15 @@ async function callClaude(userMessage, systemOverride, maxTokens, images) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ userMessage, systemOverride, maxTokens, images, model: getModel() })
     });
+    // Vercel returns HTML for 413/504 errors — handle that before JSON.parse
+    const ct = r.headers.get('content-type') || '';
+    if (!ct.includes('application/json')) {
+      const txt = await r.text();
+      if (r.status === 413 || /entity too large/i.test(txt)) {
+        throw new Error('Images too large for the server. Try fewer or smaller photos.');
+      }
+      throw new Error('Server error ' + r.status + ': ' + txt.slice(0, 200));
+    }
     const data = await r.json();
     if (!r.ok) throw new Error(data.error || ('Anthropic ' + r.status));
     return data.text;
@@ -695,19 +704,36 @@ function escapeHtml(s) {
 }
 
 function fileToBase64(file) {
+  // Resize + compress so we stay under Vercel's serverless request size limit.
+  // Max width 1400px, JPEG quality 0.82 — keeps plenty of detail for Claude vision.
   return new Promise((resolve, reject) => {
-    if (file.size > 5 * 1024 * 1024) {
-      reject(new Error('Image is over 5 MB — please use a smaller one.'));
-      return;
-    }
-    const reader = new FileReader();
-    reader.onload = () => {
-      const m = (reader.result || '').match(/^data:(.+?);base64,(.+)$/);
-      if (!m) return reject(new Error('Could not read image.'));
-      resolve({ media_type: m[1], data: m[2] });
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      try {
+        const MAX_DIM = 1400;
+        let { width: w, height: h } = img;
+        if (w > MAX_DIM || h > MAX_DIM) {
+          if (w >= h) { h = Math.round(h * (MAX_DIM / w)); w = MAX_DIM; }
+          else        { w = Math.round(w * (MAX_DIM / h)); h = MAX_DIM; }
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = w; canvas.height = h;
+        const ctx = canvas.getContext('2d');
+        ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, w, h); // flatten transparency for JPEG
+        ctx.drawImage(img, 0, 0, w, h);
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.82);
+        URL.revokeObjectURL(url);
+        const m = dataUrl.match(/^data:(.+?);base64,(.+)$/);
+        if (!m) return reject(new Error('Could not encode image.'));
+        resolve({ media_type: m[1], data: m[2] });
+      } catch (e) {
+        URL.revokeObjectURL(url);
+        reject(e);
+      }
     };
-    reader.onerror = () => reject(new Error('Read failed.'));
-    reader.readAsDataURL(file);
+    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('Image load failed.')); };
+    img.src = url;
   });
 }
 
