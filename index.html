@@ -142,7 +142,7 @@
     </div>
   </div>
   <div class="header-right">
-    <span class="pill success"><span class="dot"></span>Local</span>
+    <span class="pill success" id="env-pill"><span class="dot"></span>Local</span>
     <button class="btn btn-ghost" onclick="openSettings()">⚙ Settings</button>
   </div>
 </header>
@@ -382,7 +382,7 @@
 </main>
 
 <footer class="app">
-  <span>Next-Flow LinkedIn OS · v1.0 · runs in your browser</span>
+  <span id="footer-status">Next-Flow LinkedIn OS · v1.0 · runs in your browser</span>
   <span>next-flow.de</span>
 </footer>
 
@@ -1316,10 +1316,20 @@ function addCtaRow() {
   wrap.insertAdjacentHTML('beforeend', ctaRowHtml({ label: '', url: '', hint: '' }, wrap.children.length));
 }
 function refreshKeyStatus() {
-  const has = !!getKey();
+  // When hosted on Vercel, the Anthropic key lives in env vars on the server — always connected from the user's perspective
+  const has = IS_HOSTED || !!getKey();
   $('#key-status').textContent = has ? 'Connected' : 'Missing';
   $('#key-status').style.color = has ? 'var(--accent)' : 'var(--ink-soft)';
-  $('#key-sub').textContent = has ? 'Agents are ready to run' : 'Add in Settings to enable agents';
+  $('#key-sub').textContent = has ? (IS_HOSTED ? 'Server-side key — ready to run' : 'Agents are ready to run') : 'Add in Settings to enable agents';
+  // Update the header environment pill
+  const pill = document.getElementById('env-pill');
+  if (pill) {
+    pill.innerHTML = '<span class="dot"></span>' + (IS_HOSTED ? 'Live' : 'Local');
+  }
+  const foot = document.getElementById('footer-status');
+  if (foot) {
+    foot.textContent = 'Next-Flow LinkedIn OS · v1.0 · ' + (IS_HOSTED ? 'hosted on Vercel' : 'runs in your browser');
+  }
 }
 
 // ---- nav ----
