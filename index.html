@@ -1,0 +1,2243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Next-Flow LinkedIn OS</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<style>
+  :root {
+    --primary: #7F77DD;
+    --primary-dark: #534AB7;
+    --primary-light: #EEEDFE;
+    --accent: #1D9E75;
+    --bg: #FFFFFF;
+    --bg-soft: #F6F5F2;
+    --ink: #1A1A18;
+    --ink-soft: #6B6B67;
+    --border: rgba(0,0,0,0.09);
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: 'Syne', system-ui, sans-serif;
+    background: var(--bg-soft);
+    color: var(--ink);
+    -webkit-font-smoothing: antialiased;
+  }
+  h1, h2, h3 { font-family: 'Syne', system-ui, sans-serif; font-weight: 800; margin: 0; letter-spacing: -0.01em; }
+  .mono { font-family: 'DM Mono', ui-monospace, monospace; }
+
+  header.app {
+    background: #fff; border-bottom: 1px solid var(--border);
+    padding: 14px 24px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .brand { display: flex; align-items: center; gap: 12px; }
+  .mark { width: 40px; height: 40px; background: var(--primary); color: #fff; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 14px; }
+  .brand-title { font-weight: 800; font-size: 17px; }
+  .brand-sub { font-family: 'DM Mono', monospace; font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--ink-soft); margin-top: 3px; }
+  .header-right { display: flex; gap: 10px; align-items: center; }
+
+  nav.tabs {
+    background: #fff; border-bottom: 1px solid var(--border);
+    display: flex; overflow-x: auto; padding: 0 16px;
+    position: sticky; top: 0; z-index: 10;
+  }
+  nav.tabs button {
+    background: none; border: none; padding: 14px 16px; font-size: 13px;
+    cursor: pointer; color: var(--ink-soft);
+    border-bottom: 2px solid transparent; white-space: nowrap;
+    font-family: inherit; display: inline-flex; align-items: center; gap: 6px;
+  }
+  nav.tabs button.active { color: var(--primary-dark); border-bottom-color: var(--primary); font-weight: 600; }
+  nav.tabs button:hover { color: var(--ink); }
+
+  main { max-width: 1100px; margin: 0 auto; padding: 28px 24px; }
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+
+  .card { background: #fff; border: 1px solid var(--border); border-radius: 12px; padding: 20px; }
+  .label { font-family: 'DM Mono', monospace; font-size: 11px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink-soft); }
+  .pill { display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px; border-radius: 999px; font-family: 'DM Mono', monospace; font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; background: var(--bg-soft); border: 1px solid var(--border); color: var(--ink-soft); cursor: pointer; }
+  .pill.active { background: var(--primary-light); border-color: var(--primary); color: var(--primary-dark); }
+  .pill.success { background: rgba(29,158,117,0.08); border-color: var(--accent); color: var(--accent); }
+  .dot { width: 6px; height: 6px; border-radius: 999px; background: var(--accent); display: inline-block; }
+
+  .btn { display: inline-flex; align-items: center; gap: 8px; padding: 10px 16px; border-radius: 8px; font-weight: 600; font-size: 13px; cursor: pointer; border: 1px solid transparent; font-family: inherit; transition: all 0.15s; }
+  .btn-primary { background: var(--primary); color: #fff; }
+  .btn-primary:hover { background: var(--primary-dark); }
+  .btn-primary:disabled { background: var(--ink-soft); opacity: 0.6; cursor: not-allowed; }
+  .btn-ghost { background: transparent; color: var(--ink); border-color: var(--border); }
+  .btn-ghost:hover { background: var(--primary-light); border-color: var(--primary); color: var(--primary-dark); }
+
+  textarea, input, select {
+    width: 100%; background: #fff; border: 1px solid var(--border); border-radius: 8px;
+    padding: 10px 12px; font-family: inherit; font-size: 14px; color: var(--ink);
+  }
+  textarea { min-height: 130px; line-height: 1.6; resize: vertical; }
+  textarea:focus, input:focus, select:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-light); }
+
+  .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px; margin-bottom: 24px; }
+  .stat-value { font-size: 32px; font-weight: 800; line-height: 1; margin-top: 10px; }
+  .stat-sub { font-size: 12px; color: var(--ink-soft); margin-top: 8px; }
+
+  .row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  @media (max-width: 720px) { .row-2 { grid-template-columns: 1fr; } }
+
+  .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+  @media (max-width: 720px) { .grid-4 { grid-template-columns: 1fr 1fr; } }
+
+  .spinner { display: inline-block; width: 12px; height: 12px; border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; animation: spin 0.8s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .alert { padding: 12px 14px; border-radius: 8px; font-size: 13px; margin-top: 12px; }
+  .alert-err { background: #fff0f0; border: 1px solid #f5c2c2; color: #8a1f1f; }
+  .alert-info { background: var(--primary-light); border: 1px solid var(--primary); color: var(--primary-dark); }
+
+  .post-card { background: #fff; border: 1px solid var(--border); border-radius: 12px; padding: 18px; display: flex; flex-direction: column; gap: 12px; }
+  .post-card .head { display: flex; justify-content: space-between; gap: 8px; }
+  .post-card .hook { font-weight: 800; font-size: 16px; line-height: 1.35; }
+  .post-card .body { white-space: pre-wrap; font-size: 14px; line-height: 1.65; }
+  .post-card .why { border-top: 1px dashed var(--border); padding-top: 10px; font-size: 12px; color: var(--ink-soft); }
+
+  .fmt-row { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-bottom: 1px dashed var(--border); }
+  .fmt-row:last-child { border-bottom: none; }
+  .fmt-name { flex: 0 0 160px; }
+  .fmt-name b { font-size: 14px; }
+  .fmt-name span { display: block; font-family: 'DM Mono', monospace; font-size: 11px; color: var(--ink-soft); margin-top: 2px; }
+  .fmt-bar { flex: 1; height: 6px; background: var(--bg-soft); border-radius: 999px; overflow: hidden; }
+  .fmt-bar > i { display: block; height: 100%; border-radius: 999px; }
+  .fmt-score { font-size: 22px; font-weight: 800; width: 36px; text-align: right; }
+  .fmt-note { flex: 0 0 260px; font-size: 12px; color: var(--ink-soft); }
+  @media (max-width: 720px) { .fmt-row { flex-wrap: wrap; } .fmt-note { flex: 1 1 100%; padding-top: 4px; } }
+
+  .modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: none; align-items: center; justify-content: center; z-index: 100; padding: 16px; }
+  .modal-backdrop.open { display: flex; }
+  .modal { background: #fff; border-radius: 14px; padding: 24px; max-width: 480px; width: 100%; max-height: 90vh; overflow-y: auto; }
+  .close { background: none; border: none; cursor: pointer; font-size: 22px; color: var(--ink-soft); }
+
+  .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: var(--ink); color: #fff; padding: 10px 18px; border-radius: 8px; font-size: 13px; opacity: 0; transition: opacity 0.2s; z-index: 200; }
+  .toast.show { opacity: 1; }
+
+  ol.steps { list-style: none; padding: 0; margin: 14px 0 0; }
+  ol.steps li { display: flex; gap: 12px; align-items: flex-start; padding: 8px 0; font-size: 14px; }
+  ol.steps .num { background: var(--primary-light); color: var(--primary-dark); font-family: 'DM Mono', monospace; font-size: 11px; width: 24px; height: 24px; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; flex: 0 0 24px; }
+
+  footer.app { padding: 16px 24px; border-top: 1px solid var(--border); background: #fff; display: flex; justify-content: space-between; font-family: 'DM Mono', monospace; font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--ink-soft); }
+</style>
+</head>
+<body>
+
+<header class="app">
+  <div class="brand">
+    <span class="mark">NF</span>
+    <div>
+      <div class="brand-title">Next-Flow LinkedIn OS</div>
+      <div class="brand-sub">Personal brand engine · v1.0</div>
+    </div>
+  </div>
+  <div class="header-right">
+    <span class="pill success"><span class="dot"></span>Local</span>
+    <button class="btn btn-ghost" onclick="openSettings()">⚙ Settings</button>
+  </div>
+</header>
+
+<nav class="tabs" id="tabs">
+  <button data-t="overview" class="active">Overview</button>
+  <button data-t="agents">Agents</button>
+  <button data-t="suggestions">Suggestions ✦</button>
+  <button data-t="formats">Formats</button>
+  <button data-t="competitors">Competitors</button>
+  <button data-t="create">Create</button>
+  <button data-t="designer">Designer 🎨</button>
+  <button data-t="schedule">Schedule</button>
+</nav>
+
+<main>
+
+<!-- ====== OVERVIEW ====== -->
+<section class="tab-panel active" data-tab="overview">
+  <h2 style="font-size:26px;">Overview</h2>
+  <p style="color:var(--ink-soft); font-size:14px; margin: 6px 0 22px;">The weekly snapshot. Hit Start Sunday Session to run the pipeline.</p>
+
+  <div class="stat-grid">
+    <div class="card"><div class="label">Posts / week</div><div class="stat-value">4</div><div class="stat-sub">Mon · Wed · Thu · Fri</div></div>
+    <div class="card"><div class="label">Agents</div><div class="stat-value">5</div><div class="stat-sub">2 live · 1 building · 2 planned</div></div>
+    <div class="card"><div class="label">Scan mode</div><div class="stat-value" style="font-size:22px;">Weekly</div><div class="stat-sub">Sunday refresh</div></div>
+    <div class="card"><div class="label">API key</div><div class="stat-value" style="font-size:22px;" id="key-status">Missing</div><div class="stat-sub" id="key-sub">Add in Settings to enable agents</div></div>
+  </div>
+
+  <div class="card">
+    <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap;">
+      <div>
+        <h3 style="font-size:18px;">Sunday Session</h3>
+        <div style="font-size:13px; color:var(--ink-soft); margin-top:4px;">Five steps. One Sunday run. Four posts ready for the week.</div>
+      </div>
+      <button class="btn btn-primary" onclick="goTab('suggestions')">⚡ Start Sunday Session</button>
+    </div>
+    <ol class="steps">
+      <li><span class="num">1</span>Trend scan — what is winning on LinkedIn this week</li>
+      <li><span class="num">2</span>Competitor pulse — what direct + indirect players posted</li>
+      <li><span class="num">3</span>Suggestion engine — 5 topics to attack this week</li>
+      <li><span class="num">4</span>Content writer — generate 4 post variations</li>
+      <li><span class="num">5</span>Schedule — Mon · Wed · Thu · Fri</li>
+    </ol>
+  </div>
+</section>
+
+<!-- ====== AGENTS ====== -->
+<section class="tab-panel" data-tab="agents">
+  <h2 style="font-size:26px;">Agents</h2>
+  <p style="color:var(--ink-soft); font-size:14px; margin: 6px 0 22px;">Five specialists. Each writes its output into its tab.</p>
+  <div class="row-2" id="agent-grid"></div>
+</section>
+
+<!-- ====== SUGGESTIONS ====== -->
+<section class="tab-panel" data-tab="suggestions">
+  <h2 style="font-size:26px;">Suggestions <span style="color:var(--primary);">✦</span></h2>
+  <p style="color:var(--ink-soft); font-size:14px; margin: 6px 0 22px;">Claude picks 5 topics for the week. Click one to load into Create.</p>
+
+  <div class="card" style="display:flex; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:16px;">
+    <span class="label">Scan</span>
+    <span class="pill active" data-mode="weekly">Weekly Refresh</span>
+    <span class="pill" data-mode="monthly">Monthly Deep Scan</span>
+    <span class="pill" data-mode="quarterly">Quarterly Strategy</span>
+    <div style="margin-left:auto;">
+      <button class="btn btn-primary" id="run-sugg" onclick="runSuggestions()">✦ Run Scan</button>
+    </div>
+  </div>
+
+  <div id="sugg-out"></div>
+</section>
+
+<!-- ====== FORMATS ====== -->
+<section class="tab-panel" data-tab="formats">
+  <h2 style="font-size:26px;">Formats</h2>
+  <p style="color:var(--ink-soft); font-size:14px; margin: 6px 0 22px;">Live performance scores for 6 LinkedIn formats.</p>
+  <div class="card" id="fmt-list"></div>
+</section>
+
+<!-- ====== COMPETITORS ====== -->
+<section class="tab-panel" data-tab="competitors">
+  <h2 style="font-size:26px;">Competitors</h2>
+  <p style="color:var(--ink-soft); font-size:14px; margin: 6px 0 22px;">Direct + indirect radar. Run a deep analysis to find content gaps.</p>
+  <div class="row-2">
+    <div class="card">
+      <div class="label" style="margin-bottom:10px;">Direct</div>
+      <div id="comp-direct"></div>
+    </div>
+    <div class="card">
+      <div class="label" style="margin-bottom:10px;">Indirect — Germany</div>
+      <div id="comp-indirect"></div>
+    </div>
+  </div>
+  <div style="margin-top:16px;">
+    <button class="btn btn-primary" id="run-comp" onclick="runCompetitorAnalysis()">⚡ Run Deep Analysis</button>
+  </div>
+  <div id="comp-out" style="margin-top:16px;"></div>
+
+  <div class="card" style="margin-top:24px;">
+    <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:12px; flex-wrap:wrap; margin-bottom:12px;">
+      <div>
+        <h3 style="font-size:16px;">Analyze any creator manually</h3>
+        <p style="font-size:13px; color:var(--ink-soft); margin-top:4px;">Paste a LinkedIn profile URL, or paste any creator's recent post text. Claude gives you a visual breakdown.</p>
+      </div>
+    </div>
+    <label class="label" style="display:block; margin-bottom:6px;">LinkedIn URL or pasted post text</label>
+    <textarea id="manual-comp-input" placeholder="e.g. https://www.linkedin.com/in/some-creator&#10;or paste 1-3 of their recent posts here" style="min-height:100px;"></textarea>
+    <div style="margin-top:10px; display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+      <button class="btn btn-primary" id="run-manual" onclick="runManualCompetitor()">⚡ Analyze</button>
+      <span class="label" id="manual-hint" style="opacity:0.7;">Tip: pasting post text gives sharper analysis than URL alone</span>
+    </div>
+    <div id="manual-out" style="margin-top:14px;"></div>
+  </div>
+</section>
+
+<!-- ====== CREATE ====== -->
+<section class="tab-panel" data-tab="create">
+  <h2 style="font-size:26px;">Create</h2>
+  <p style="color:var(--ink-soft); font-size:14px; margin: 6px 0 22px;">Drop a story. Pick a framework. Generate 4 LinkedIn variations. First person. No dashes. No AI smell.</p>
+
+  <div id="style-banner"></div>
+
+  <div class="card" style="display:flex; flex-direction:column; gap:14px;">
+    <div>
+      <label class="label" style="display:block; margin-bottom:6px;">Raw input</label>
+      <textarea id="create-input" placeholder="Drop a story, an observation from a shoot, a contrarian take. Be specific — the more concrete the input, the sharper the post."></textarea>
+    </div>
+    <div class="row-2">
+      <div>
+        <label class="label" style="display:block; margin-bottom:6px;">Framework</label>
+        <div id="fw-pills" style="display:flex; flex-wrap:wrap; gap:6px;"></div>
+      </div>
+      <div>
+        <label class="label" style="display:block; margin-bottom:6px;">Format</label>
+        <div id="fmt-pills" style="display:flex; flex-wrap:wrap; gap:6px;"></div>
+      </div>
+    </div>
+    <div class="row-2">
+      <div>
+        <label class="label" style="display:block; margin-bottom:6px;">📎 Reference framework (optional)</label>
+        <div style="font-size:11px; color:var(--ink-soft); margin-bottom:6px; line-height:1.5;">Upload a screenshot of any LinkedIn post whose framework you want to mimic. Claude reads the structure and applies it.</div>
+        <input type="file" accept="image/*" id="ref-framework" onchange="loadRefFramework(this)" style="font-size:12px;" />
+        <div id="ref-framework-preview"></div>
+      </div>
+      <div>
+        <label class="label" style="display:block; margin-bottom:6px;">🎨 Reference graphic (optional)</label>
+        <div style="font-size:11px; color:var(--ink-soft); margin-bottom:6px; line-height:1.5;">Upload an image showing the style of graphic you want. Used when you click Build Canva graphic.</div>
+        <input type="file" accept="image/*" id="ref-graphic" onchange="loadRefGraphic(this)" style="font-size:12px;" />
+        <div id="ref-graphic-preview"></div>
+      </div>
+    </div>
+    <div>
+      <label class="label" style="display:block; margin-bottom:6px;">Append CTA (link to your website)</label>
+      <div id="cta-pills" style="display:flex; flex-wrap:wrap; gap:6px;"></div>
+      <div style="font-size:11px; color:var(--ink-soft); margin-top:6px;">Edit your CTAs in Settings → CTAs. Pick <strong>✨ Auto</strong> to let Claude choose the most relevant link for the post.</div>
+    </div>
+    <div>
+      <button class="btn btn-primary" id="run-create" onclick="runCreate()">✨ Generate 4 Variations</button>
+    </div>
+    <div id="create-err"></div>
+  </div>
+
+  <div id="create-out" style="margin-top:18px;"></div>
+
+  <div class="card" id="regen-card" style="margin-top:18px; display:none;">
+    <h3 style="font-size:15px; margin-bottom:6px;">Not feeling these 4?</h3>
+    <p style="font-size:12px; color:var(--ink-soft); margin-bottom:10px;">Tell me what to change and I'll generate 4 more. Or change the competitor style / locked hook in Competitors tab, then regenerate.</p>
+    <textarea class="textarea" id="regen-input" placeholder="e.g. punchier hooks, lead with the contrarian angle, more vulnerable opening, drop the corporate words..." style="min-height:70px;"></textarea>
+    <div style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap;">
+      <button class="btn btn-primary" id="run-regen" onclick="regenerateVariations()">↻ Generate 4 more</button>
+      <button class="btn btn-ghost" onclick="$('#regen-input').value=''">Clear note</button>
+    </div>
+  </div>
+</section>
+
+<!-- ====== DESIGNER ====== -->
+<section class="tab-panel" data-tab="designer">
+  <h2 style="font-size:26px;">Designer 🎨</h2>
+  <p style="color:var(--ink-soft); font-size:14px; margin: 6px 0 22px;">Turn any variation into real branded slides. Download as PNGs and post directly — or upload to Canva and refine.</p>
+
+  <div class="card" id="designer-empty" style="text-align:center; padding:40px 20px;">
+    <div style="font-size:48px; margin-bottom:10px;">🎨</div>
+    <h3 style="font-size:16px;">Nothing loaded yet</h3>
+    <p style="font-size:13px; color:var(--ink-soft); margin-top:6px; max-width:420px; margin-left:auto; margin-right:auto;">Go to Create, generate variations, click <strong>→ Design graphic</strong> on the one you want to turn into a carousel or image post.</p>
+    <button class="btn btn-primary" style="margin-top:14px;" onclick="goTab('create')">Go to Create</button>
+  </div>
+
+  <div id="designer-loaded" style="display:none;">
+    <div class="card" style="display:flex; flex-direction:column; gap:14px;">
+      <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:12px; flex-wrap:wrap;">
+        <div style="flex:1; min-width:240px;">
+          <div class="label" style="margin-bottom:4px;">Designing this post</div>
+          <div id="designer-hook" style="font-weight:800; font-size:16px; line-height:1.35;"></div>
+          <div id="designer-format" style="margin-top:4px;"></div>
+        </div>
+        <button class="btn btn-ghost" onclick="clearDesigner()" style="padding:4px 12px; font-size:12px;">× Clear</button>
+      </div>
+
+      <div class="row-2">
+        <div>
+          <label class="label" style="display:block; margin-bottom:6px;">🎨 Reference style (optional)</label>
+          <div style="font-size:11px; color:var(--ink-soft); margin-bottom:6px; line-height:1.5;">Image showing the visual style you want. Claude matches its look.</div>
+          <input type="file" accept="image/*" id="designer-ref" onchange="loadDesignerRef(this)" style="font-size:12px;" />
+          <div id="designer-ref-preview"></div>
+        </div>
+        <div>
+          <label class="label" style="display:block; margin-bottom:6px;">📷 Your photos (optional)</label>
+          <div style="font-size:11px; color:var(--ink-soft); margin-bottom:6px; line-height:1.5;">Photos to embed INSIDE slides — on-set shots, BTS, product photos. Pick multiple at once.</div>
+          <input type="file" accept="image/*" multiple id="designer-photos" onchange="loadDesignerPhotos(this)" style="font-size:12px;" />
+          <div id="designer-photos-preview" style="margin-top:8px; display:flex; flex-wrap:wrap; gap:8px;"></div>
+        </div>
+      </div>
+
+      <div>
+        <label class="label" style="display:block; margin-bottom:6px;">📊 Number of slides</label>
+        <div id="slide-count-pills" style="display:flex; flex-wrap:wrap; gap:6px;"></div>
+        <div style="font-size:11px; color:var(--ink-soft); margin-top:6px; line-height:1.5;">Pick how many slides you want in the carousel. <strong>Auto</strong> = 1 slide for image posts, 7 for carousels.</div>
+      </div>
+
+      <div style="display:flex; gap:8px; flex-wrap:wrap;">
+        <button class="btn btn-primary" id="run-design" onclick="generateDesign()">✨ Generate slides</button>
+        <button class="btn btn-ghost" onclick="generateDesign(true)">↻ Regenerate (different style)</button>
+      </div>
+    </div>
+
+    <div id="designer-out" style="margin-top:18px;"></div>
+  </div>
+</section>
+
+<!-- ====== SCHEDULE ====== -->
+<section class="tab-panel" data-tab="schedule">
+  <h2 style="font-size:26px;">Schedule</h2>
+  <p style="color:var(--ink-soft); font-size:14px; margin: 6px 0 22px;">Weekly slots, CET. Round 2 will push to Buffer.</p>
+  <div class="grid-4" id="sched-grid"></div>
+</section>
+
+</main>
+
+<footer class="app">
+  <span>Next-Flow LinkedIn OS · v1.0 · runs in your browser</span>
+  <span>next-flow.de</span>
+</footer>
+
+<!-- Settings Modal -->
+<div class="modal-backdrop" id="settings-modal" onclick="if(event.target===this) closeSettings()">
+  <div class="modal">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+      <h3 style="font-size:18px;">Settings</h3>
+      <button class="close" onclick="closeSettings()">×</button>
+    </div>
+
+    <div style="font-size:13px; color:var(--ink-soft); line-height:1.6; margin-bottom:14px;">
+      Your Anthropic API key is saved only in this browser (localStorage). Nothing leaves your computer except the direct call to Anthropic when you click a generate button. Get a key at <a href="https://console.anthropic.com" target="_blank" style="color:var(--primary-dark);">console.anthropic.com</a>.
+    </div>
+
+    <label class="label" style="display:block; margin-bottom:6px;">Anthropic API key</label>
+    <input id="key-input" type="password" placeholder="sk-ant-..." />
+
+    <label class="label" style="display:block; margin: 14px 0 6px;">Model</label>
+    <select id="model-input">
+      <option value="claude-sonnet-4-5">claude-sonnet-4-5 (recommended)</option>
+      <option value="claude-sonnet-4-6">claude-sonnet-4-6</option>
+      <option value="claude-opus-4-6">claude-opus-4-6 (slower, sharper)</option>
+      <option value="claude-haiku-4-5-20251001">claude-haiku-4-5 (fast, cheap)</option>
+    </select>
+
+    <div style="margin-top:18px; padding-top:14px; border-top:1px solid var(--border);">
+      <label class="label" style="display:block; margin-bottom:8px;">Canva</label>
+      <div id="canva-status-row" style="display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-bottom:14px;"></div>
+    </div>
+
+    <div style="padding-top:14px; border-top:1px solid var(--border);">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+        <label class="label" style="margin:0;">CTAs — link to your work</label>
+        <button class="btn btn-ghost" onclick="addCtaRow()" style="padding:4px 10px; font-size:11px;">＋ Add CTA</button>
+      </div>
+      <div style="font-size:11px; color:var(--ink-soft); margin-bottom:10px; line-height:1.5;">When you append a CTA in Create, Claude weaves the link naturally at the end of each post.</div>
+      <div id="cta-editor" style="display:flex; flex-direction:column; gap:10px;"></div>
+    </div>
+
+    <div style="display:flex; gap:10px; margin-top:18px;">
+      <button class="btn btn-primary" onclick="saveSettings()">Save</button>
+      <button class="btn btn-ghost" onclick="closeSettings()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ================================
+// Next-Flow LinkedIn OS — single file
+// ================================
+
+const SYSTEM_PROMPT = `You are the Next-Flow LinkedIn OS — an AI agent system built for Muhammad Haris Siddiqui, a solopreneur filmmaker and content strategist based in Germany.
+
+His personal brand targets: founders, CEOs, CMOs who want to build personal brands on LinkedIn.
+His company Next-Flow provides: content production, founder systems, content systems for B2B SaaS.
+His voice: casual, first person, no dashes, no AI smell, story first then insight, punchy sentences.
+His ICP geography: Germany primary, Europe secondary, global long-term.
+
+When writing content for him:
+- First person always
+- No dashes anywhere
+- No bullet overload inside posts
+- No corporate language
+- Lead with a real story or observation
+- Pull the insight out at the end
+- Sound like a creative director talking to a friend
+
+When running analysis:
+- Be specific with data and examples
+- Score formats 1-10
+- Identify content gaps competitors are missing
+- Always end with actionable suggestions`;
+
+const WRITER_PROMPT = `Write 4 LinkedIn post variations for Muhammad Haris Siddiqui based on the input provided.
+
+Rules:
+- First person always
+- No dashes
+- No bullet overload inside posts
+- Casual and direct, not corporate
+- Story first, insight second
+- Short punchy sentences
+- No AI smell
+
+Variation 1: STORYTELLING — lead with the moment, build tension, deliver insight
+Variation 2: EDUCATIONAL — teach one thing clearly, use the story as proof
+Variation 3: CONTRARIAN — challenge a common belief, use the story as evidence
+Variation 4: BEHIND THE SCENES — show the real process, what actually happened
+
+Return ONLY a JSON array. No prose, no markdown fences. Schema:
+[
+  {
+    "framework": "STORYTELLING" | "EDUCATIONAL" | "CONTRARIAN" | "BEHIND THE SCENES",
+    "hook": "first line of the post, the scroll stopper",
+    "post": "the full post text, ready to paste into LinkedIn",
+    "format": "text" | "carousel" | "image+text",
+    "why": "one or two sentences on why this variation will perform well"
+  }
+]`;
+
+const SUGGESTIONS_PROMPT = `You are scanning LinkedIn for Muhammad Haris Siddiqui (founder personal brand audience, Germany → Europe → Global). Generate categorized content intelligence for this week.
+
+Haris's unique angles to leverage in "topics_for_you":
+- Filmmaking background (real shoots, real productions)
+- Building AI content systems (he is literally doing this now)
+- German market but global ambition
+- Storytelling-first approach vs typical content strategy advice
+- The Paris Metro shoot story (shot video for AI sales tool EISA, Paris + Düsseldorf, 7000 euros)
+
+Return ONLY a JSON array. No prose, no markdown fences. Schema (categories must appear in this order):
+
+[
+  // 3 items — content tactics winning on LinkedIn right now
+  { "category": "what_is_working", "title": "short tactic name", "why": "why this is winning right now (1-2 sentences, be specific)", "score": 1-10 },
+
+  // 3 items — subject areas getting unusual traction this week
+  { "category": "trending_topics", "title": "the topic", "why": "what's driving the spike", "score": 1-10 },
+
+  // 3 items — hook/opening-line styles that perform
+  { "category": "hook_patterns", "title": "hook style name", "why": "why this style is hooking right now", "score": 1-10, "example": "example first line written in Haris's voice (first person, no dashes)" },
+
+  // 4 items — personalized topics Haris can write THIS week, leveraging his unique angles
+  { "category": "topics_for_you", "title": "specific topic for Haris", "why": "why this fits him and the moment", "score": 1-10, "hook": "first line of the post in his voice", "format": "carousel" | "text" | "image+text" | "short-video" }
+]`;
+
+const COMPETITOR_PROMPT = `Analyze these LinkedIn competitors for Muhammad Haris Siddiqui's personal brand.
+
+Direct: Justin Welsh, Lara Acosta, Matt Gray, Sahil Bloom
+Indirect (Germany): Franz Wegner, Daniel Korenblum, Robert Heineke, Birte Boerner
+
+Use your knowledge of each creator's public LinkedIn output. Estimate format mix percentages — they must total 100 per creator.
+
+Return ONLY a JSON object. No prose, no markdown fences. Schema:
+{
+  "top_opportunities": [
+    { "title": "punchy specific opportunity (max 8 words)", "why": "1-2 sentences on why it's a gap Haris can own right now" },
+    { "title": "...", "why": "..." },
+    { "title": "...", "why": "..." }
+  ],
+  "competitors": [
+    {
+      "name": "Justin Welsh",
+      "formats": { "text": 70, "carousel": 20, "video": 7, "image": 3 },
+      "hooks": ["pattern 1 (short)", "pattern 2", "pattern 3"],
+      "topics": ["topic 1", "topic 2", "topic 3"],
+      "frequency": "e.g. 4-5 posts/week, Tue+Thu peak",
+      "what_works": "one sentence on the dominant winning move",
+      "gap": "the specific opening Haris can exploit vs this person (one sentence)"
+    }
+    // ... 8 competitors total in the order: Justin Welsh, Lara Acosta, Matt Gray, Sahil Bloom, Franz Wegner, Daniel Korenblum, Robert Heineke, Birte Boerner
+  ]
+}`;
+
+const AGENTS = [
+  { id: 'competitor', name: 'Competitor Monitor', status: 'active',   desc: 'Scans direct + indirect competitors. Surfaces gaps you can own.', action: "goTab('competitors')" },
+  { id: 'trend',      name: 'Trend Scanner',      status: 'building', desc: 'Reads the LinkedIn algorithm — formats, hooks, topics, what to avoid.', action: "toast('Trend Scanner — wired up in next version')" },
+  { id: 'writer',     name: 'Content Writer',     status: 'active',   desc: 'Turns one story into 4 variations. Powers the Create tab.', action: "goTab('create')" },
+  { id: 'format',     name: 'Format Scorer',      status: 'building', desc: 'Updates format scores based on live algorithm signals.', action: "goTab('formats')" },
+  { id: 'analytics',  name: 'Analytics Report',   status: 'planned',  desc: 'Weekly recap — what worked, what to stop, what to repeat.', action: "toast('Analytics — coming in v1.1')" }
+];
+
+const FORMATS = [
+  { name: 'Carousel / PDF',   score: 10, engagement: '24.42%',     color: '#1D9E75', note: 'Highest dwell time. Algorithm favourite. Lead with this.' },
+  { name: 'Text Story',       score: 8,  engagement: '6-8%',       color: '#1D9E75', note: 'Trust + voice builder. Best for personal stories.' },
+  { name: 'Image + Text',     score: 7,  engagement: '5-7%',       color: '#7F77DD', note: 'On-set photos pair well with creator stories.' },
+  { name: 'Short Video <90s', score: 7,  engagement: '5.6%',       color: '#7F77DD', note: 'Trust accelerator. Edutainment beats polish.' },
+  { name: 'Polls',            score: 4,  engagement: 'reach only', color: '#7F77DD', note: 'Works at 50k+ followers. Skip for now.' },
+  { name: 'Long Video',       score: 3,  engagement: '0.74x reach',color: '#6B6B67', note: 'Save for YouTube Phase 2.' }
+];
+
+const COMPETITORS = {
+  direct: [
+    { name: 'Justin Welsh', region: 'US',     focus: 'Solopreneur, frameworks, 500k+', handle: 'justinwelsh',  color: '#7F77DD' },
+    { name: 'Lara Acosta',  region: 'Global', focus: 'Personal brand, content system, 300k+', handle: 'laraacosta', color: '#D85A30' },
+    { name: 'Matt Gray',    region: 'US',     focus: 'Founder brand, build in public, 200k+', handle: 'mattgray1', color: '#1D9E75' },
+    { name: 'Sahil Bloom',  region: 'US',     focus: 'Storytelling, curiosity, 400k+', handle: 'sahilbloom',  color: '#D4537E' }
+  ],
+  indirect: [
+    { name: 'Franz Wegner',     region: 'DE', focus: 'Video production, personal branding', handle: 'franzwegner', color: '#185FA5' },
+    { name: 'Daniel Korenblum', region: 'DE', focus: '4M impressions, personal branding', handle: 'danielkorenblum', color: '#BA7517' },
+    { name: 'Robert Heineke',   region: 'DE', focus: 'Leaders Media, LinkedIn lead system', handle: 'robertheineke', color: '#534AB7' },
+    { name: 'Birte Boerner',    region: 'DE', focus: 'LeadsIn, B2B inbound funnels', handle: 'birteboerner', color: '#0F6E56' }
+  ]
+};
+function liUrl(h) { return 'https://www.linkedin.com/in/' + h; }
+function liActivity(h) { return 'https://www.linkedin.com/in/' + h + '/recent-activity/all/'; }
+
+const SLOTS = [
+  { day: 'Mon', time: '08:00', format: 'Carousel (6-8 slides)', score: 10 },
+  { day: 'Wed', time: '08:00', format: 'Text Story',            score: 8 },
+  { day: 'Thu', time: '12:00', format: 'Image + Text',          score: 7 },
+  { day: 'Fri', time: '08:00', format: 'Short Video or Text',   score: 7 }
+];
+
+const FRAMEWORKS = ['All 4', 'Storytelling', 'Educational', 'Contrarian', 'Behind the Scenes'];
+const POST_FORMATS = ['Text post', 'Carousel', 'Image + text'];
+
+// ---- Vercel-hosted flag — enables real Canva integration ----
+const IS_HOSTED = !window.location.protocol.startsWith('file');
+
+// ---- state ----
+let activeTab = 'overview';
+let canvaConnected = false;
+let selectedFramework = 'All 4';
+let selectedFormat = 'Text post';
+let selectedScanMode = 'weekly';
+let queue = JSON.parse(localStorage.getItem('nf_queue') || '[]');
+let styleGuide = null; // active "write in this creator's style" guide
+let selectedCta = null; // currently selected CTA preset
+let pickedHook = null;  // locked hook — Create will open every variation with it
+let referenceGraphic = null;   // { media_type, data } — visual reference for Canva briefs
+let referenceFramework = null; // { media_type, data } — screenshot of a framework to mimic in Create
+
+// Default CTAs — editable in Settings. Stored in localStorage as nf_ctas.
+const DEFAULT_CTAS = [
+  { label: 'Founder Content Diagnosis', url: 'https://next-flow.de/diagnosis', hint: 'Diagnose what your content is missing' },
+  { label: '20x Content Formats',       url: 'https://next-flow.de/20x-formats', hint: 'Lead magnet — content formats that work' },
+  { label: 'Content Planning Framework', url: 'https://next-flow.de/content-planning', hint: 'Lead magnet — content planning' }
+];
+function getCtas() {
+  try { return JSON.parse(localStorage.getItem('nf_ctas')) || DEFAULT_CTAS; }
+  catch { return DEFAULT_CTAS; }
+}
+function setCtas(arr) { localStorage.setItem('nf_ctas', JSON.stringify(arr)); }
+
+// ---- helpers ----
+function $(sel) { return document.querySelector(sel); }
+function $$(sel) { return document.querySelectorAll(sel); }
+
+function toast(msg) {
+  const t = $('#toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+function goTab(t) {
+  activeTab = t;
+  $$('nav.tabs button').forEach(b => b.classList.toggle('active', b.dataset.t === t));
+  $$('.tab-panel').forEach(p => p.classList.toggle('active', p.dataset.tab === t));
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function getKey() { return localStorage.getItem('nf_anthropic_key') || ''; }
+function getModel() { return localStorage.getItem('nf_model') || 'claude-sonnet-4-5'; }
+
+async function callClaude(userMessage, systemOverride, maxTokens, images) {
+  // When hosted on Vercel, route through the server-side proxy — keeps the API key server-side
+  if (IS_HOSTED) {
+    const r = await fetch('/api/claude', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userMessage, systemOverride, maxTokens, images, model: getModel() })
+    });
+    const data = await r.json();
+    if (!r.ok) throw new Error(data.error || ('Anthropic ' + r.status));
+    return data.text;
+  }
+  // Local file:// fallback — uses the user's key from localStorage and calls Anthropic directly
+  const key = getKey();
+  if (!key) {
+    openSettings();
+    throw new Error('Paste your Anthropic API key in Settings first.');
+  }
+  // If images are passed, send as multimodal content array; else send a plain string
+  let content;
+  if (images && images.length) {
+    content = images.map(img => ({ type: 'image', source: { type: 'base64', media_type: img.media_type, data: img.data } }));
+    content.push({ type: 'text', text: userMessage });
+  } else {
+    content = userMessage;
+  }
+  const r = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': key,
+      'anthropic-version': '2023-06-01',
+      'anthropic-dangerous-direct-browser-access': 'true'
+    },
+    body: JSON.stringify({
+      model: getModel(),
+      max_tokens: maxTokens || 2500,
+      system: systemOverride || SYSTEM_PROMPT,
+      messages: [{ role: 'user', content: content }]
+    })
+  });
+  if (!r.ok) {
+    const t = await r.text();
+    throw new Error('Anthropic ' + r.status + ': ' + t);
+  }
+  const data = await r.json();
+  return (data.content && data.content[0] && data.content[0].text) || '';
+}
+
+function extractJson(text) {
+  if (!text) return null;
+  const fenced = text.match(/```(?:json)?\s*([\s\S]*?)```/i);
+  const raw = fenced ? fenced[1] : text;
+  const s = raw.indexOf('['), e = raw.lastIndexOf(']');
+  if (s === -1 || e === -1) return null;
+  try { return JSON.parse(raw.slice(s, e + 1)); } catch { return null; }
+}
+
+function escapeHtml(s) {
+  return String(s || '').replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+}
+
+function fileToBase64(file) {
+  return new Promise((resolve, reject) => {
+    if (file.size > 5 * 1024 * 1024) {
+      reject(new Error('Image is over 5 MB — please use a smaller one.'));
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      const m = (reader.result || '').match(/^data:(.+?);base64,(.+)$/);
+      if (!m) return reject(new Error('Could not read image.'));
+      resolve({ media_type: m[1], data: m[2] });
+    };
+    reader.onerror = () => reject(new Error('Read failed.'));
+    reader.readAsDataURL(file);
+  });
+}
+
+async function loadRefGraphic(input) {
+  const file = input.files && input.files[0];
+  if (!file) return;
+  try {
+    const img = await fileToBase64(file);
+    referenceGraphic = img;
+    document.getElementById('ref-graphic-preview').innerHTML = `
+      <div style="margin-top:8px; position:relative; display:inline-block;">
+        <img src="data:${img.media_type};base64,${img.data}" style="max-width:140px; max-height:100px; border-radius:6px; border:1px solid var(--border); display:block;" />
+        <button class="btn btn-ghost" onclick="clearRefGraphic()" style="position:absolute; top:-8px; right:-8px; padding:2px 8px; font-size:11px; background:#fff; line-height:1;">×</button>
+      </div>`;
+    toast('Reference graphic loaded');
+  } catch (e) { toast(e.message); }
+}
+
+function clearRefGraphic() {
+  referenceGraphic = null;
+  const inp = document.getElementById('ref-graphic'); if (inp) inp.value = '';
+  const pre = document.getElementById('ref-graphic-preview'); if (pre) pre.innerHTML = '';
+}
+
+async function loadRefFramework(input) {
+  const file = input.files && input.files[0];
+  if (!file) return;
+  try {
+    const img = await fileToBase64(file);
+    referenceFramework = img;
+    document.getElementById('ref-framework-preview').innerHTML = `
+      <div style="margin-top:8px; position:relative; display:inline-block;">
+        <img src="data:${img.media_type};base64,${img.data}" style="max-width:140px; max-height:100px; border-radius:6px; border:1px solid var(--border); display:block;" />
+        <button class="btn btn-ghost" onclick="clearRefFramework()" style="position:absolute; top:-8px; right:-8px; padding:2px 8px; font-size:11px; background:#fff; line-height:1;">×</button>
+      </div>`;
+    toast('Reference framework loaded');
+  } catch (e) { toast(e.message); }
+}
+
+function clearRefFramework() {
+  referenceFramework = null;
+  const inp = document.getElementById('ref-framework'); if (inp) inp.value = '';
+  const pre = document.getElementById('ref-framework-preview'); if (pre) pre.innerHTML = '';
+}
+
+// ---- Designer ----
+let designerPostId = null;
+let designerRef = null;
+let designerSlideCount = null; // null = auto (1 for image, 7 for carousel)
+let designerPhotos = []; // array of {media_type, data} — your photos to embed inside slides
+
+function openDesigner(postId) {
+  designerPostId = postId;
+  const p = window['_post_' + postId];
+  if (!p) return;
+  document.getElementById('designer-empty').style.display = 'none';
+  document.getElementById('designer-loaded').style.display = '';
+  document.getElementById('designer-hook').textContent = p.hook || '';
+  document.getElementById('designer-format').innerHTML = `<span class="pill active">${escapeHtml(p.framework || '')}</span> <span class="pill">${escapeHtml(p.format || '')}</span>`;
+  document.getElementById('designer-out').innerHTML = '';
+  renderSlideCountPills();
+  goTab('designer');
+}
+
+function renderSlideCountPills() {
+  const el = document.getElementById('slide-count-pills');
+  if (!el) return;
+  const counts = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+  const items = [
+    `<span class="pill ${designerSlideCount === null ? 'active' : ''}" onclick="designerSlideCount=null; renderSlideCountPills();" style="cursor:pointer;">Auto</span>`,
+    ...counts.map(n => `<span class="pill ${designerSlideCount === n ? 'active' : ''}" onclick="designerSlideCount=${n}; renderSlideCountPills();" style="cursor:pointer; min-width:32px; text-align:center;">${n}</span>`)
+  ];
+  el.innerHTML = items.join('');
+}
+
+function clearDesigner() {
+  designerPostId = null;
+  designerRef = null;
+  designerPhotos = [];
+  document.getElementById('designer-empty').style.display = '';
+  document.getElementById('designer-loaded').style.display = 'none';
+  const inp = document.getElementById('designer-ref'); if (inp) inp.value = '';
+  const pre = document.getElementById('designer-ref-preview'); if (pre) pre.innerHTML = '';
+  const phPre = document.getElementById('designer-photos-preview'); if (phPre) phPre.innerHTML = '';
+  const phInp = document.getElementById('designer-photos'); if (phInp) phInp.value = '';
+}
+
+async function loadDesignerRef(input) {
+  const file = input.files && input.files[0];
+  if (!file) return;
+  try {
+    const img = await fileToBase64(file);
+    designerRef = img;
+    document.getElementById('designer-ref-preview').innerHTML = `
+      <div style="margin-top:8px; position:relative; display:inline-block;">
+        <img src="data:${img.media_type};base64,${img.data}" style="max-width:140px; max-height:100px; border-radius:6px; border:1px solid var(--border); display:block;" />
+        <button class="btn btn-ghost" onclick="clearDesignerRef()" style="position:absolute; top:-8px; right:-8px; padding:2px 8px; font-size:11px; background:#fff; line-height:1;">×</button>
+      </div>`;
+    toast('Reference loaded');
+  } catch (e) { toast(e.message); }
+}
+
+function clearDesignerRef() {
+  designerRef = null;
+  const inp = document.getElementById('designer-ref'); if (inp) inp.value = '';
+  const pre = document.getElementById('designer-ref-preview'); if (pre) pre.innerHTML = '';
+}
+
+async function loadDesignerPhotos(input) {
+  const files = Array.from(input.files || []);
+  if (!files.length) return;
+  for (const file of files) {
+    try {
+      const img = await fileToBase64(file);
+      designerPhotos.push(img);
+    } catch (e) { toast(file.name + ': ' + e.message); }
+  }
+  renderDesignerPhotosPreview();
+  input.value = '';
+  toast(designerPhotos.length + ' photo' + (designerPhotos.length === 1 ? '' : 's') + ' loaded');
+}
+
+function renderDesignerPhotosPreview() {
+  const wrap = document.getElementById('designer-photos-preview');
+  if (!wrap) return;
+  if (!designerPhotos.length) { wrap.innerHTML = ''; return; }
+  wrap.innerHTML = designerPhotos.map((img, i) => `
+    <div style="position:relative; display:inline-block;">
+      <img src="data:${img.media_type};base64,${img.data}" style="width:64px; height:64px; object-fit:cover; border-radius:6px; border:1px solid var(--border); display:block;" />
+      <div style="position:absolute; bottom:2px; left:2px; background:rgba(0,0,0,0.75); color:#fff; padding:1px 5px; border-radius:3px; font-family:'DM Mono',monospace; font-size:9px; font-weight:500;">${i + 1}</div>
+      <button class="btn btn-ghost" onclick="removeDesignerPhoto(${i})" style="position:absolute; top:-7px; right:-7px; padding:2px 7px; font-size:10px; background:#fff; line-height:1; min-width:auto;">×</button>
+    </div>
+  `).join('');
+}
+
+function removeDesignerPhoto(i) {
+  designerPhotos.splice(i, 1);
+  renderDesignerPhotosPreview();
+}
+
+async function generateDesign(regenerate) {
+  if (!designerPostId) return;
+  const p = window['_post_' + designerPostId];
+  if (!p) return;
+  const isCarousel = /carousel/i.test(p.format);
+  // Determine slide count: user override > auto (1 for image, 7 for carousel)
+  const slideCount = designerSlideCount !== null ? designerSlideCount : (isCarousel ? 7 : 1);
+  const out = document.getElementById('designer-out');
+  out.innerHTML = '<div class="card" style="padding:20px;"><span class="spinner"></span> Designing your slides… this takes 10-20 seconds.</div>';
+  const btn = document.getElementById('run-design');
+  const original = btn.innerHTML;
+  btn.disabled = true;
+
+  // Build the image-attachment notes so Claude knows what's what
+  let imageRoles = '';
+  let imgIdx = 0;
+  if (designerRef) {
+    imgIdx++;
+    imageRoles += `\nIMAGE ${imgIdx} = REFERENCE STYLE. Match its visual style — layout density, color feel, typography hierarchy, mood. North star for the design.`;
+  }
+  if (designerPhotos.length) {
+    const start = imgIdx + 1;
+    const end = imgIdx + designerPhotos.length;
+    imageRoles += `\nIMAGE${start === end ? ' ' + start : `S ${start}-${end}`} = USER PHOTOS available to embed INSIDE slides. ${designerPhotos.length} photo${designerPhotos.length === 1 ? '' : 's'} provided. Pick which slides should feature a user photo (typically content slides, not the cover unless the photo IS the hook). Reference photos by 0-based index — "use_user_image": 0 means the first user photo, 1 means the second, etc.`;
+    imgIdx = end;
+  }
+  const refNote = imageRoles ? '\n\nATTACHED IMAGES:' + imageRoles : '';
+  const regenNote = regenerate ? '\n\nThis is a regeneration. Generate a DIFFERENT visual direction from before — different color emphasis, different layout patterns, different mood.' : '';
+  const styleNote = styleGuide ? `\n\nStyle context: emulate ${styleGuide.name}'s visual feel — ${styleGuide.what_works || ''}.` : '';
+  const photoSchemaNote = designerPhotos.length ? `
+
+## USING USER PHOTOS (${designerPhotos.length} available)
+Pick a "layout" per slide based on what FITS the reference style and the photo count available:
+
+LAYOUTS WITHOUT PHOTOS:
+- "standard" — solid brand-color bg, big title, body. Default for text-only slides.
+
+LAYOUTS USING ONE PHOTO (set "use_user_image": int):
+- "photo_full" — single photo full-bleed bg + dark gradient + white text overlay. Dramatic.
+- "photo_top" — photo top 55%, text panel below.
+- "photo_side" — photo one half, text other half.
+- "halftone_hero" — single photo with gritty halftone-style overlay + bold text. Editorial / vintage feel.
+
+LAYOUTS USING MULTIPLE PHOTOS (set "use_user_images": [int, int, int]):
+- "polaroid_stack" — 2 or 3 user photos rendered as polaroid frames at angles, scattered on a textured colored background. Title sits in a corner away from the polaroids. Use when reference shows scattered/polaroid/documentary style. Requires AT LEAST 2 photos in use_user_images.
+
+CRITICAL: If the reference image shows a polaroid-collage, scattered-photo, or magazine-collage aesthetic, use "polaroid_stack" for the cover slide (and maybe one more) with 2-3 of the user's photos. Match the reference's MOOD and LAYOUT, not just describe it in visual_style text.
+
+Spread the ${designerPhotos.length} photo${designerPhotos.length === 1 ? '' : 's'} across the slides — vary layouts so the carousel has rhythm. polaroid_stack uses multiple photos at once.` : `
+
+## NO USER PHOTOS PROVIDED
+Use layout="standard" for all slides — solid brand-color backgrounds with typography.`;
+
+  const isSingle = slideCount === 1;
+  const isTwo = slideCount === 2;
+  let countInstructions;
+  if (isSingle) {
+    countInstructions = 'Generate EXACTLY 1 slide with role="cover". This is a single-image LinkedIn graphic — distill the post into one bold visual.';
+  } else if (isTwo) {
+    countInstructions = 'Generate EXACTLY 2 slides. Slide 1 role="cover" (hook). Slide 2 role="cta" (call to action / conclusion).';
+  } else {
+    countInstructions = `Generate EXACTLY ${slideCount} slides. Slide 1 MUST be role="cover" (the hook). Slide ${slideCount} MUST be role="cta" (the call to action / conclusion). The ${slideCount - 2} slides in between are role="content" or role="data" — break down the post body into bite-size insights, one beat per slide.`;
+  }
+
+  const prompt = `Design a LinkedIn ${isSingle ? 'single-image graphic' : `carousel of ${slideCount} slides`} for Muhammad Haris Siddiqui based on this post.${refNote}${photoSchemaNote}${regenNote}${styleNote}
+
+POST HOOK: ${p.hook || ''}
+POST BODY: ${p.post || ''}
+
+Brand:
+- Primary purple: #7F77DD
+- Primary dark: #534AB7
+- Primary light: #EEEDFE
+- Accent green: #1D9E75
+- Background cream: #F6F5F2
+- Ink: #1A1A18
+- Fonts: Syne (headings, weight 800), DM Mono (labels, small caps)
+
+## SLIDE COUNT
+${countInstructions}
+
+Return ONLY a JSON object. No prose, no markdown fences. Schema:
+{
+  "visual_style": "1-2 sentences on overall look",
+  "canva_template_query": "specific search keywords for Canva templates that match this style — e.g. 'polaroid collage navy editorial' or 'minimal carousel typography purple' or 'vintage halftone magazine'. Be style-specific, not generic.",
+  "bg_palette": { "primary": "#hex (main background color — use brand purple by default OR override based on reference)", "accent": "#hex" },
+  "slides": [
+    {
+      "n": 1,
+      "role": "cover" | "content" | "data" | "cta",
+      "layout": "standard" | "photo_full" | "photo_top" | "photo_side" | "halftone_hero" | "polaroid_stack",
+      "label": "short uppercase tag (e.g. THE STORY, INSIGHT, FRAMEWORK, TAKEAWAY)",
+      "title": "punchy headline (max 10 words for cover, max 12 for content)",
+      "body": "supporting line (1-2 sentences max), keep short and scannable",
+      "accent": "purple" | "cream" | "dark" | "custom",
+      "bg_color": "#hex (only if accent=custom — use this to match the reference, e.g. navy blue from a polaroid reference)",
+      "text_color": "#hex (only if accent=custom)",
+      "use_user_image": int (single 0-based photo index, for photo_full/photo_top/photo_side/halftone_hero),
+      "use_user_images": [int, int, int] (array of 2-3 photo indices, ONLY for polaroid_stack)
+    }
+  ]
+}
+
+Critical rules:
+- Keep title text SHORT and impactful — slides have limited space
+- Keep body text under 200 characters per slide
+- The "label" field is a tiny uppercase tag shown above the title (like "THE INSIGHT" or "STEP 02")
+- accent alternates between "purple" (purple bg, white text), "cream" (cream bg, dark text), and "dark" (almost-black bg, white text) for visual rhythm`;
+
+  try {
+    // Stack reference style first, then user photos — order must match prompt's "IMAGE 1, IMAGE 2..." numbering
+    const allImages = [];
+    if (designerRef) allImages.push(designerRef);
+    designerPhotos.forEach(p => allImages.push(p));
+    const images = allImages.length ? allImages : null;
+    const text = await callClaude(prompt, null, 3500, images);
+    const fenced = text.match(/```(?:json)?\s*([\s\S]*?)```/i);
+    const raw = fenced ? fenced[1] : text;
+    const s = raw.indexOf('{'), e = raw.lastIndexOf('}');
+    if (s === -1 || e === -1) throw new Error('Could not parse design');
+    const design = JSON.parse(raw.slice(s, e + 1));
+    renderDesigner(design, p);
+  } catch (err) {
+    out.innerHTML = `<div class="alert alert-err">${escapeHtml(err.message)}${err.message.includes('529') || err.message.toLowerCase().includes('overload') ? '<br><br>Anthropic is overloaded. Wait 30s and try again, or switch to Haiku in Settings.' : ''}</div>`;
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = original;
+  }
+}
+
+function renderDesigner(design, post) {
+  const slides = design.slides || [];
+  const total = slides.length;
+  const slidesHtml = slides.map((s, i) => renderSlideCard(s, i, total)).join('');
+  // Use Claude's specific style-based query; fall back only if absent
+  const queryText = design.canva_template_query || ('LinkedIn ' + (total > 1 ? 'carousel' : 'graphic'));
+  const canvaQuery = encodeURIComponent(queryText);
+  document.getElementById('designer-out').innerHTML = `
+    <div style="background:var(--bg-soft); border:1px solid var(--border); border-radius:12px; padding:14px; margin-bottom:14px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+        <div>
+          <div class="label">Visual style</div>
+          <div style="font-size:13px; color:var(--ink); margin-top:4px; line-height:1.55;">${escapeHtml(design.visual_style || '')}</div>
+        </div>
+        <div style="display:flex; gap:6px; flex-wrap:wrap;">
+          <button class="btn btn-primary" onclick="downloadAllSlides()">⬇ Download all as PNG</button>
+          <button id="push-canva-btn" class="btn btn-primary" onclick="pushSlidesToCanva()" style="background:#00C4CC;">☁ Push slides to Canva</button>
+          <a href="https://www.canva.com/search/templates?q=${canvaQuery}" target="_blank" rel="noopener" style="text-decoration:none;"><button class="btn btn-ghost">→ Canva: search "${escapeHtml(queryText).slice(0, 32)}"</button></a>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--ink-soft); margin-top:8px; line-height:1.55;">PNG files download to your Mac. You can upload them straight to LinkedIn, or drop them into Canva as a starting design and refine there. The Canva button searches for templates that match the generated visual style.</div>
+    </div>
+    <div id="slides-wrap" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:18px;">
+      ${slidesHtml}
+    </div>
+    <div id="canva-result"></div>
+  `;
+}
+
+function renderSlideCard(s, i, total) {
+  const accent = s.accent || (i === 0 ? 'purple' : (i === total - 1 ? 'purple' : (i % 2 === 0 ? 'cream' : 'dark')));
+  let cfg = {
+    purple: { bg: '#7F77DD', fg: '#fff',     soft: 'rgba(255,255,255,0.7)', accent: '#EEEDFE', logoBg: 'rgba(255,255,255,0.95)', logoFg: '#534AB7' },
+    cream:  { bg: '#F6F5F2', fg: '#1A1A18',  soft: '#6B6B67',               accent: '#7F77DD', logoBg: '#7F77DD',                 logoFg: '#fff' },
+    dark:   { bg: '#1A1A18', fg: '#fff',     soft: 'rgba(255,255,255,0.65)',accent: '#7F77DD', logoBg: '#7F77DD',                 logoFg: '#fff' }
+  }[accent] || {};
+  // Custom color override from Claude when accent="custom"
+  if (accent === 'custom' && s.bg_color) {
+    const fg = s.text_color || '#fff';
+    cfg = { bg: s.bg_color, fg: fg, soft: fg === '#fff' || fg === '#FFFFFF' ? 'rgba(255,255,255,0.75)' : 'rgba(0,0,0,0.6)', accent: '#EEEDFE', logoBg: 'rgba(255,255,255,0.95)', logoFg: '#534AB7' };
+  }
+  const num = String(i + 1).padStart(2, '0');
+  const tot = String(total).padStart(2, '0');
+  const sizeStr = String(i + 1) + ' / ' + total;
+
+  // Determine layout — accept either new "layout" field or legacy "photo_layout"
+  const layout = s.layout || (s.photo_layout ? 'photo_' + s.photo_layout : 'standard');
+
+  // Photo embedding
+  const useIdx = typeof s.use_user_image === 'number' ? s.use_user_image : -1;
+  const photo = (useIdx >= 0 && useIdx < designerPhotos.length) ? designerPhotos[useIdx] : null;
+  const photoSrc = photo ? `data:${photo.media_type};base64,${photo.data}` : null;
+  // Multiple photos for polaroid_stack
+  const photoIndices = Array.isArray(s.use_user_images) ? s.use_user_images.filter(n => typeof n === 'number' && n >= 0 && n < designerPhotos.length) : [];
+  const polaroidPhotos = photoIndices.map(idx => designerPhotos[idx]);
+
+  const labelTag = s.label ? `<div style="font-family:'DM Mono',monospace; font-size:13px; letter-spacing:0.1em; margin-bottom:18px; font-weight:500;">${escapeHtml(s.label).toUpperCase()}</div>` : '';
+  const titleSize = i === 0 ? '48px' : '38px';
+  const bodySize  = i === 0 ? '20px' : '18px';
+
+  let slideHtml;
+
+  // ===== POLAROID STACK LAYOUT =====
+  if (layout === 'polaroid_stack' && polaroidPhotos.length >= 2) {
+    const bgColor = (accent === 'custom' && s.bg_color) ? s.bg_color : '#1B3A6F';
+    const textColor = (accent === 'custom' && s.text_color) ? s.text_color : '#fff';
+    // Three preset polaroid positions/rotations (use up to 3 photos)
+    const slots = [
+      { top: '58px',  right: '40px', width: '195px', rot: '7deg'  },
+      { top: '230px', left: '50px',  width: '180px', rot: '-6deg' },
+      { bottom: '60px', right: '70px', width: '185px', rot: '4deg'  }
+    ];
+    const polaroidsHtml = polaroidPhotos.slice(0, 3).map((p, k) => {
+      const pos = slots[k];
+      const posStyle = `top:${pos.top || 'auto'}; bottom:${pos.bottom || 'auto'}; left:${pos.left || 'auto'}; right:${pos.right || 'auto'}; width:${pos.width};`;
+      return `<div style="position:absolute; ${posStyle} padding:9px 9px 26px; background:#fff; transform:rotate(${pos.rot}); box-shadow:0 14px 32px rgba(0,0,0,0.4); z-index:${k + 1};"><img src="data:${p.media_type};base64,${p.data}" crossorigin="anonymous" style="width:100%; aspect-ratio:4/5; object-fit:cover; display:block;" /></div>`;
+    }).join('');
+
+    slideHtml = `
+      <div class="slide-canvas" id="slide-${i}" style="
+        width:540px; height:540px; transform:scale(0.55); transform-origin:top left;
+        background:${bgColor};
+        background-image: radial-gradient(circle, rgba(255,255,255,0.08) 1.5px, transparent 1.6px);
+        background-size: 10px 10px;
+        position:relative; overflow:hidden;
+        font-family:'Syne', system-ui, sans-serif; color:${textColor};
+        box-shadow:0 4px 12px rgba(0,0,0,0.08);
+      ">
+        <div style="position:absolute; top:32px; left:36px; right:36px; display:flex; justify-content:space-between; align-items:center; z-index:10;">
+          <div style="width:36px; height:36px; background:rgba(255,255,255,0.95); color:#534AB7; border-radius:9px; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:13px;">NF</div>
+          <div style="font-family:'DM Mono',monospace; font-size:11px; color:${textColor}; opacity:0.75; letter-spacing:0.08em;">${num} / ${tot}</div>
+        </div>
+        <div style="position:absolute; top:80px; left:36px; width:55%; z-index:5;">
+          ${s.label ? `<div style="font-family:'DM Mono',monospace; font-size:11px; color:#FAC775; letter-spacing:0.12em; margin-bottom:14px; font-weight:500;">${escapeHtml(s.label).toUpperCase()}</div>` : ''}
+          <div style="font-family:'Syne',system-ui,sans-serif; font-weight:800; font-size:28px; line-height:1.12; letter-spacing:-0.01em; ${s.body ? 'margin-bottom:12px;' : ''}">${escapeHtml(s.title || '')}</div>
+          ${s.body ? `<div style="font-family:'Syne',system-ui,sans-serif; font-weight:400; font-size:14px; line-height:1.45; color:${textColor}; opacity:0.85;">${escapeHtml(s.body)}</div>` : ''}
+        </div>
+        ${polaroidsHtml}
+        <div style="position:absolute; bottom:24px; left:36px; font-family:'DM Mono',monospace; font-size:10px; color:${textColor}; opacity:0.6;">@MuhammadHarisSiddiqui</div>
+      </div>`;
+  }
+  // ===== HALFTONE HERO LAYOUT =====
+  else if (layout === 'halftone_hero' && photoSrc) {
+    slideHtml = `
+      <div class="slide-canvas" id="slide-${i}" style="
+        width:540px; height:540px; transform:scale(0.55); transform-origin:top left;
+        position:relative; overflow:hidden;
+        font-family:'Syne', system-ui, sans-serif;
+        box-shadow:0 4px 12px rgba(0,0,0,0.08);
+        background:#1A1A18;
+      ">
+        <img src="${photoSrc}" crossorigin="anonymous" style="position:absolute; inset:0; width:100%; height:100%; object-fit:cover; filter:contrast(1.2) saturate(0.85);" />
+        <div style="position:absolute; inset:0; background-image: radial-gradient(circle, rgba(0,0,0,0.5) 1.2px, transparent 1.3px); background-size:5px 5px; mix-blend-mode:multiply;"></div>
+        <div style="position:absolute; inset:0; background:linear-gradient(to bottom, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.15) 40%, rgba(0,0,0,0.92) 100%);"></div>
+        <div style="position:absolute; top:48px; left:48px; right:48px; display:flex; justify-content:space-between; align-items:center; color:#fff;">
+          <div style="width:38px; height:38px; background:rgba(255,255,255,0.95); color:#534AB7; border-radius:9px; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:14px;">NF</div>
+          <div style="font-family:'DM Mono',monospace; font-size:12px; color:rgba(255,255,255,0.85); letter-spacing:0.08em;">${num} / ${tot}</div>
+        </div>
+        <div style="position:absolute; bottom:48px; left:48px; right:48px; color:#fff;">
+          ${s.label ? `<div style="font-family:'DM Mono',monospace; font-size:13px; color:#FAC775; letter-spacing:0.12em; margin-bottom:14px; font-weight:500;">${escapeHtml(s.label).toUpperCase()}</div>` : ''}
+          <div style="font-family:'Syne',system-ui,sans-serif; font-weight:800; font-size:${i === 0 ? '46px' : '36px'}; line-height:1.05; letter-spacing:-0.01em; margin-bottom:${s.body ? '14px' : '0'}; text-shadow:0 2px 16px rgba(0,0,0,0.6);">${escapeHtml(s.title || '')}</div>
+          ${s.body ? `<div style="font-family:'Syne',system-ui,sans-serif; font-weight:400; font-size:${i === 0 ? '18px' : '16px'}; line-height:1.5; color:rgba(255,255,255,0.92); text-shadow:0 1px 8px rgba(0,0,0,0.5);">${escapeHtml(s.body)}</div>` : ''}
+        </div>
+      </div>`;
+  }
+  // ===== PHOTO_FULL LAYOUT =====
+  else if (photoSrc && (layout === 'photo_full' || layout === 'photo_layout_full')) {
+    // Full-bleed photo with dark gradient + white text
+    slideHtml = `
+      <div class="slide-canvas" id="slide-${i}" style="
+        width:540px; height:540px; transform:scale(0.55); transform-origin:top left;
+        position:relative; overflow:hidden;
+        font-family:'Syne', system-ui, sans-serif;
+        box-shadow:0 4px 12px rgba(0,0,0,0.08);
+      ">
+        <img src="${photoSrc}" crossorigin="anonymous" style="position:absolute; inset:0; width:100%; height:100%; object-fit:cover;" />
+        <div style="position:absolute; inset:0; background:linear-gradient(to bottom, rgba(0,0,0,0.35) 0%, rgba(0,0,0,0.05) 35%, rgba(0,0,0,0.92) 100%);"></div>
+        <div style="position:absolute; top:48px; left:48px; right:48px; display:flex; justify-content:space-between; align-items:center; color:#fff;">
+          <div style="width:38px; height:38px; background:rgba(255,255,255,0.95); color:#534AB7; border-radius:9px; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:14px;">NF</div>
+          <div style="font-family:'DM Mono',monospace; font-size:12px; color:rgba(255,255,255,0.85); letter-spacing:0.08em;">${num} / ${tot}</div>
+        </div>
+        <div style="position:absolute; bottom:48px; left:48px; right:48px; color:#fff;">
+          ${s.label ? `<div style="font-family:'DM Mono',monospace; font-size:13px; color:#EEEDFE; letter-spacing:0.1em; margin-bottom:14px; font-weight:500;">${escapeHtml(s.label).toUpperCase()}</div>` : ''}
+          <div style="font-family:'Syne',system-ui,sans-serif; font-weight:800; font-size:${titleSize}; line-height:1.05; letter-spacing:-0.01em; margin-bottom:${s.body ? '14px' : '0'}; text-shadow:0 2px 12px rgba(0,0,0,0.4);">${escapeHtml(s.title || '')}</div>
+          ${s.body ? `<div style="font-family:'Syne',system-ui,sans-serif; font-weight:400; font-size:${bodySize}; line-height:1.5; color:rgba(255,255,255,0.92);">${escapeHtml(s.body)}</div>` : ''}
+        </div>
+      </div>`;
+  } else if (photoSrc && (layout === 'photo_top' || layout === 'top')) {
+    // Photo on top 55%, accent panel below
+    slideHtml = `
+      <div class="slide-canvas" id="slide-${i}" style="
+        width:540px; height:540px; transform:scale(0.55); transform-origin:top left;
+        position:relative; overflow:hidden; display:flex; flex-direction:column;
+        font-family:'Syne', system-ui, sans-serif;
+        box-shadow:0 4px 12px rgba(0,0,0,0.08); background:${cfg.bg};
+      ">
+        <div style="height:55%; position:relative; overflow:hidden;">
+          <img src="${photoSrc}" crossorigin="anonymous" style="width:100%; height:100%; object-fit:cover; display:block;" />
+          <div style="position:absolute; top:24px; left:24px; right:24px; display:flex; justify-content:space-between; align-items:center;">
+            <div style="width:36px; height:36px; background:rgba(255,255,255,0.95); color:#534AB7; border-radius:9px; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:13px;">NF</div>
+            <div style="font-family:'DM Mono',monospace; font-size:11px; color:#fff; background:rgba(0,0,0,0.5); padding:3px 8px; border-radius:4px; letter-spacing:0.08em;">${num} / ${tot}</div>
+          </div>
+        </div>
+        <div style="flex:1; padding:32px 40px; display:flex; flex-direction:column; justify-content:space-between; color:${cfg.fg};">
+          <div>
+            ${s.label ? `<div style="font-family:'DM Mono',monospace; font-size:12px; color:${cfg.accent}; letter-spacing:0.1em; margin-bottom:10px; font-weight:500;">${escapeHtml(s.label).toUpperCase()}</div>` : ''}
+            <div style="font-family:'Syne',system-ui,sans-serif; font-weight:800; font-size:30px; line-height:1.1; letter-spacing:-0.01em; margin-bottom:${s.body ? '10px' : '0'};">${escapeHtml(s.title || '')}</div>
+            ${s.body ? `<div style="font-family:'Syne',system-ui,sans-serif; font-weight:400; font-size:15px; line-height:1.45; color:${cfg.soft};">${escapeHtml(s.body)}</div>` : ''}
+          </div>
+          <div style="width:36px; height:3px; background:${cfg.accent}; border-radius:2px;"></div>
+        </div>
+      </div>`;
+  } else if (photoSrc && (layout === 'photo_side' || layout === 'side')) {
+    // Photo on left, accent panel on right
+    slideHtml = `
+      <div class="slide-canvas" id="slide-${i}" style="
+        width:540px; height:540px; transform:scale(0.55); transform-origin:top left;
+        position:relative; overflow:hidden; display:flex;
+        font-family:'Syne', system-ui, sans-serif;
+        box-shadow:0 4px 12px rgba(0,0,0,0.08); background:${cfg.bg};
+      ">
+        <div style="width:50%; position:relative; overflow:hidden;">
+          <img src="${photoSrc}" crossorigin="anonymous" style="width:100%; height:100%; object-fit:cover; display:block;" />
+        </div>
+        <div style="width:50%; padding:40px 32px; display:flex; flex-direction:column; justify-content:space-between; color:${cfg.fg};">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <div style="width:36px; height:36px; background:${cfg.logoBg}; color:${cfg.logoFg}; border-radius:9px; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:13px;">NF</div>
+            <div style="font-family:'DM Mono',monospace; font-size:11px; color:${cfg.soft}; letter-spacing:0.08em;">${num} / ${tot}</div>
+          </div>
+          <div>
+            ${s.label ? `<div style="font-family:'DM Mono',monospace; font-size:12px; color:${cfg.accent}; letter-spacing:0.1em; margin-bottom:12px; font-weight:500;">${escapeHtml(s.label).toUpperCase()}</div>` : ''}
+            <div style="font-family:'Syne',system-ui,sans-serif; font-weight:800; font-size:28px; line-height:1.1; letter-spacing:-0.01em; margin-bottom:${s.body ? '12px' : '0'};">${escapeHtml(s.title || '')}</div>
+            ${s.body ? `<div style="font-family:'Syne',system-ui,sans-serif; font-weight:400; font-size:14px; line-height:1.45; color:${cfg.soft};">${escapeHtml(s.body)}</div>` : ''}
+          </div>
+          <div style="font-family:'DM Mono',monospace; font-size:10px; color:${cfg.soft};">@MuhammadHarisSiddiqui</div>
+        </div>
+      </div>`;
+  } else {
+    // Standard text-only slide
+    slideHtml = `
+      <div class="slide-canvas" id="slide-${i}" style="
+        width:540px; height:540px; transform:scale(0.55); transform-origin:top left;
+        background:${cfg.bg}; color:${cfg.fg};
+        padding:56px 48px;
+        display:flex; flex-direction:column; justify-content:space-between;
+        position:relative; overflow:hidden;
+        font-family:'Syne', system-ui, sans-serif;
+        box-shadow:0 4px 12px rgba(0,0,0,0.08);
+      ">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <div style="width:38px; height:38px; background:${cfg.logoBg}; color:${cfg.logoFg}; border-radius:9px; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:14px;">NF</div>
+          <div style="font-family:'DM Mono',monospace; font-size:12px; color:${cfg.soft}; letter-spacing:0.08em;">${num} / ${tot}</div>
+        </div>
+        <div>
+          ${s.label ? `<div style="font-family:'DM Mono',monospace; font-size:13px; color:${cfg.accent}; letter-spacing:0.1em; margin-bottom:18px; font-weight:500;">${escapeHtml(s.label).toUpperCase()}</div>` : ''}
+          <div style="font-family:'Syne',system-ui,sans-serif; font-weight:800; font-size:${titleSize}; line-height:1.05; letter-spacing:-0.01em; margin-bottom:${s.body ? '18px' : '0'};">${escapeHtml(s.title || '')}</div>
+          ${s.body ? `<div style="font-family:'Syne',system-ui,sans-serif; font-weight:400; font-size:${bodySize}; line-height:1.5; color:${cfg.soft};">${escapeHtml(s.body)}</div>` : ''}
+        </div>
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <div style="font-family:'DM Mono',monospace; font-size:11px; color:${cfg.soft};">@MuhammadHarisSiddiqui</div>
+          <div style="width:36px; height:3px; background:${cfg.accent}; border-radius:2px;"></div>
+        </div>
+      </div>`;
+  }
+
+  const hasPhotos = !!photoSrc || polaroidPhotos.length > 0;
+  const photoBadge = hasPhotos ? ` · <span class="pill" style="padding:2px 8px; background:#fff4e6; border-color:#BA7517; color:#854F0B;">📷 ${escapeHtml(layout)}</span>` : '';
+
+  return `
+    <div style="display:flex; flex-direction:column; gap:8px;">
+      ${slideHtml}
+      <div style="display:flex; gap:6px; margin-top:-235px; padding-top:0; align-items:center; font-family:'DM Mono',monospace; font-size:11px; color:var(--ink-soft);">
+        Slide ${sizeStr} · <span class="pill" style="padding:2px 8px;">${escapeHtml(s.role || '')}</span>${photoBadge}
+        <button class="btn btn-ghost" style="padding:2px 8px; font-size:10px; margin-left:auto;" onclick="downloadOneSlide(${i})">⬇</button>
+      </div>
+    </div>`;
+}
+
+async function downloadOneSlide(idx) {
+  const el = document.getElementById('slide-' + idx);
+  if (!el) return;
+  // Temporarily reset transform for clean render
+  const prevTransform = el.style.transform;
+  el.style.transform = 'none';
+  try {
+    const canvas = await html2canvas(el, { scale: 2, backgroundColor: null, logging: false, useCORS: true });
+    const url = canvas.toDataURL('image/png');
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `nextflow-slide-${String(idx + 1).padStart(2, '0')}.png`;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    toast('Downloaded slide ' + (idx + 1));
+  } catch (e) {
+    toast('Download failed: ' + e.message);
+  } finally {
+    el.style.transform = prevTransform;
+  }
+}
+
+async function downloadAllSlides() {
+  const slides = document.querySelectorAll('.slide-canvas');
+  if (!slides.length) return;
+  toast('Building PNG bundle…');
+  try {
+    const zip = new JSZip();
+    for (let i = 0; i < slides.length; i++) {
+      const el = slides[i];
+      const prevTransform = el.style.transform;
+      el.style.transform = 'none';
+      try {
+        const canvas = await html2canvas(el, { scale: 2, backgroundColor: null, logging: false, useCORS: true });
+        const blob = await new Promise(res => canvas.toBlob(res, 'image/png'));
+        zip.file(`slide-${String(i + 1).padStart(2, '0')}.png`, blob);
+      } finally {
+        el.style.transform = prevTransform;
+      }
+    }
+    const content = await zip.generateAsync({ type: 'blob' });
+    const url = URL.createObjectURL(content);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'nextflow-slides.zip';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    toast('Downloaded zip with ' + slides.length + ' slides');
+  } catch (e) {
+    toast('Download failed: ' + e.message);
+  }
+}
+
+// ---- settings ----
+function openSettings() {
+  $('#key-input').value = getKey();
+  $('#model-input').value = getModel();
+  renderCtaEditor(getCtas());
+  $('#settings-modal').classList.add('open');
+}
+function closeSettings() { $('#settings-modal').classList.remove('open'); }
+function saveSettings() {
+  localStorage.setItem('nf_anthropic_key', $('#key-input').value.trim());
+  localStorage.setItem('nf_model', $('#model-input').value);
+  // collect CTA rows
+  const rows = document.querySelectorAll('.cta-row');
+  const ctas = [];
+  rows.forEach(r => {
+    const label = r.querySelector('[data-f="label"]').value.trim();
+    const url = r.querySelector('[data-f="url"]').value.trim();
+    const hint = r.querySelector('[data-f="hint"]').value.trim();
+    if (label && url) ctas.push({ label, url, hint });
+  });
+  if (ctas.length) setCtas(ctas);
+  refreshKeyStatus();
+  renderCtaPills();
+  closeSettings();
+  toast('Settings saved');
+}
+function renderCtaEditor(ctas) {
+  const wrap = document.getElementById('cta-editor');
+  if (!wrap) return;
+  wrap.innerHTML = ctas.map((c, i) => ctaRowHtml(c, i)).join('');
+}
+function ctaRowHtml(c, i) {
+  return `
+    <div class="cta-row" data-i="${i}" style="background:var(--bg-soft); padding:10px; border-radius:8px; display:flex; flex-direction:column; gap:6px;">
+      <div style="display:flex; gap:6px; align-items:center;">
+        <input class="input" data-f="label" value="${escapeHtml(c.label || '')}" placeholder="Label (e.g. Founder Diagnosis)" style="flex:1;" />
+        <button class="btn btn-ghost" onclick="this.parentElement.parentElement.remove()" style="padding:4px 10px; font-size:11px;">×</button>
+      </div>
+      <input class="input" data-f="url" value="${escapeHtml(c.url || '')}" placeholder="https://next-flow.de/…" />
+      <input class="input" data-f="hint" value="${escapeHtml(c.hint || '')}" placeholder="When to use it (optional)" />
+    </div>`;
+}
+function addCtaRow() {
+  const wrap = document.getElementById('cta-editor');
+  if (!wrap) return;
+  wrap.insertAdjacentHTML('beforeend', ctaRowHtml({ label: '', url: '', hint: '' }, wrap.children.length));
+}
+function refreshKeyStatus() {
+  const has = !!getKey();
+  $('#key-status').textContent = has ? 'Connected' : 'Missing';
+  $('#key-status').style.color = has ? 'var(--accent)' : 'var(--ink-soft)';
+  $('#key-sub').textContent = has ? 'Agents are ready to run' : 'Add in Settings to enable agents';
+}
+
+// ---- nav ----
+$$('nav.tabs button').forEach(b => b.addEventListener('click', () => goTab(b.dataset.t)));
+
+// ---- AGENTS render ----
+function renderAgents() {
+  const wrap = $('#agent-grid');
+  wrap.innerHTML = AGENTS.map(a => {
+    const statusPill = a.status === 'active' ? '<span class="pill success">active</span>' :
+                       a.status === 'building' ? '<span class="pill active">building</span>' :
+                       '<span class="pill">planned</span>';
+    const dis = a.status === 'planned' ? 'disabled style="opacity:0.5;"' : '';
+    return `
+      <div class="card" style="display:flex; flex-direction:column; gap:10px;">
+        <div style="display:flex; justify-content:space-between; gap:10px;">
+          <div>
+            <div style="font-weight:700; font-size:15px;">${a.name}</div>
+            <div style="font-size:12px; color:var(--ink-soft); margin-top:4px; line-height:1.55;">${a.desc}</div>
+          </div>
+          ${statusPill}
+        </div>
+        <div style="display:flex; justify-content:flex-end;">
+          <button class="btn btn-ghost" ${dis} onclick="${a.action}">▶ Open</button>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+// ---- FORMATS render ----
+function renderFormats() {
+  $('#fmt-list').innerHTML = FORMATS.map(f => `
+    <div class="fmt-row">
+      <div class="fmt-name"><b>${f.name}</b><span>${f.engagement}</span></div>
+      <div class="fmt-bar"><i style="width:${f.score * 10}%; background:${f.color};"></i></div>
+      <div class="fmt-score">${f.score}</div>
+      <div class="fmt-note">${f.note}</div>
+    </div>`).join('');
+}
+
+// ---- COMPETITORS render ----
+function initials(n) { return n.split(' ').map(s => s[0]).join('').slice(0, 2).toUpperCase(); }
+
+function compRow(c) {
+  return `
+    <div style="display:flex; gap:12px; align-items:center; padding:10px 0; border-bottom:1px dashed var(--border);">
+      <div style="width:38px; height:38px; border-radius:50%; background:${c.color}; color:#fff; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:13px; flex-shrink:0;">${initials(c.name)}</div>
+      <div style="flex:1; min-width:0;">
+        <div style="font-weight:700; font-size:14px;">${escapeHtml(c.name)}</div>
+        <div style="font-size:11px; color:var(--ink-soft); margin-top:2px; overflow:hidden; text-overflow:ellipsis;">${escapeHtml(c.focus)}</div>
+      </div>
+      <div style="display:flex; gap:6px; flex-shrink:0;">
+        <a href="${liUrl(c.handle)}" target="_blank" rel="noopener" title="Open LinkedIn profile" style="text-decoration:none;">
+          <span class="pill" style="cursor:pointer;">in →</span>
+        </a>
+        <a href="${liActivity(c.handle)}" target="_blank" rel="noopener" title="Recent activity" style="text-decoration:none;">
+          <span class="pill" style="cursor:pointer;">posts →</span>
+        </a>
+      </div>
+    </div>`;
+}
+
+function renderCompetitors() {
+  $('#comp-direct').innerHTML = COMPETITORS.direct.map(compRow).join('');
+  $('#comp-indirect').innerHTML = COMPETITORS.indirect.map(compRow).join('');
+}
+
+// Renders the structured analysis as visual cards.
+function renderCompetitorAnalysis(data) {
+  const all = [...COMPETITORS.direct, ...COMPETITORS.indirect];
+  // map by name for color/handle lookup
+  const meta = {};
+  all.forEach(c => { meta[c.name.toLowerCase()] = c; });
+
+  const opps = (data.top_opportunities || []).slice(0, 3);
+  const oppsHtml = opps.length ? `
+    <div class="card" style="background:linear-gradient(180deg, var(--primary-light) 0%, #fff 100%); border:1px solid var(--primary); margin-bottom:18px;">
+      <div class="label" style="margin-bottom:10px; color:var(--primary-dark);">⚡ Top 3 opportunities to own</div>
+      <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:12px;">
+        ${opps.map((o, i) => `
+          <div style="background:#fff; border:1px solid var(--primary); border-radius:10px; padding:14px;">
+            <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
+              <span style="background:var(--primary); color:#fff; width:22px; height:22px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; font-weight:800; font-size:12px;">${i + 1}</span>
+              <div style="font-weight:800; font-size:13px; line-height:1.3;">${escapeHtml(o.title || '')}</div>
+            </div>
+            <div style="font-size:12px; color:var(--ink-soft); line-height:1.55;">${escapeHtml(o.why || '')}</div>
+          </div>`).join('')}
+      </div>
+    </div>` : '';
+
+  const competitors = data.competitors || [];
+  const cardsHtml = competitors.map(c => {
+    const m = meta[(c.name || '').toLowerCase()] || { color: 'var(--primary)', handle: '' };
+    const f = c.formats || {};
+    const total = (f.text || 0) + (f.carousel || 0) + (f.video || 0) + (f.image || 0) || 1;
+    const pct = k => Math.round((f[k] || 0) / total * 100);
+    return `
+      <div class="card" style="display:flex; flex-direction:column; gap:12px;">
+        <div style="display:flex; align-items:center; gap:12px;">
+          <div style="width:42px; height:42px; border-radius:50%; background:${m.color}; color:#fff; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:14px;">${initials(c.name)}</div>
+          <div style="flex:1;">
+            <div style="font-weight:800; font-size:15px;">${escapeHtml(c.name)}</div>
+            <div style="font-size:11px; color:var(--ink-soft); margin-top:2px;">${escapeHtml(c.frequency || '')}</div>
+          </div>
+          ${m.handle ? `
+          <div style="display:flex; gap:4px;">
+            <a href="${liUrl(m.handle)}" target="_blank" rel="noopener" style="text-decoration:none;"><span class="pill" style="cursor:pointer;">in</span></a>
+            <a href="${liActivity(m.handle)}" target="_blank" rel="noopener" style="text-decoration:none;"><span class="pill" style="cursor:pointer;">posts</span></a>
+          </div>` : ''}
+        </div>
+
+        <div>
+          <div class="label" style="margin-bottom:6px;">Format mix</div>
+          <div style="display:flex; height:10px; border-radius:999px; overflow:hidden; background:var(--bg-soft);">
+            <div style="width:${pct('text')}%; background:#1D9E75;" title="Text ${pct('text')}%"></div>
+            <div style="width:${pct('carousel')}%; background:#7F77DD;" title="Carousel ${pct('carousel')}%"></div>
+            <div style="width:${pct('video')}%; background:#D4537E;" title="Video ${pct('video')}%"></div>
+            <div style="width:${pct('image')}%; background:#BA7517;" title="Image ${pct('image')}%"></div>
+          </div>
+          <div style="display:flex; justify-content:space-between; margin-top:6px; font-family:'DM Mono',monospace; font-size:10px; color:var(--ink-soft);">
+            <span><span style="display:inline-block; width:8px; height:8px; background:#1D9E75; border-radius:2px; vertical-align:middle; margin-right:4px;"></span>Text ${pct('text')}%</span>
+            <span><span style="display:inline-block; width:8px; height:8px; background:#7F77DD; border-radius:2px; vertical-align:middle; margin-right:4px;"></span>Carousel ${pct('carousel')}%</span>
+            <span><span style="display:inline-block; width:8px; height:8px; background:#D4537E; border-radius:2px; vertical-align:middle; margin-right:4px;"></span>Video ${pct('video')}%</span>
+            <span><span style="display:inline-block; width:8px; height:8px; background:#BA7517; border-radius:2px; vertical-align:middle; margin-right:4px;"></span>Image ${pct('image')}%</span>
+          </div>
+        </div>
+
+        ${(c.hooks && c.hooks.length) ? `
+          <div>
+            <div class="label" style="margin-bottom:6px;">Hook patterns — click to lock one</div>
+            <div style="display:flex; flex-wrap:wrap; gap:5px;">
+              ${c.hooks.map(h => `<span class="pill" style="cursor:pointer;" onclick="pickHook(${JSON.stringify(h).replace(/"/g, '&quot;')})" title="Lock this hook for your next post">${escapeHtml(h)}</span>`).join('')}
+            </div>
+          </div>` : ''}
+
+        ${(c.topics && c.topics.length) ? `
+          <div>
+            <div class="label" style="margin-bottom:6px;">Top topics</div>
+            <div style="display:flex; flex-wrap:wrap; gap:5px;">
+              ${c.topics.map(t => `<span class="pill active">${escapeHtml(t)}</span>`).join('')}
+            </div>
+          </div>` : ''}
+
+        ${c.what_works ? `
+          <div style="font-size:12px; color:var(--ink); line-height:1.5; background:var(--bg-soft); padding:10px; border-radius:8px;">
+            <span class="label" style="display:block; margin-bottom:4px;">What works</span>
+            ${escapeHtml(c.what_works)}
+          </div>` : ''}
+
+        ${c.gap ? `
+          <div style="font-size:12px; color:var(--primary-dark); line-height:1.5; background:var(--primary-light); padding:10px; border-radius:8px; border-left:3px solid var(--primary);">
+            <span class="label" style="display:block; margin-bottom:4px; color:var(--primary-dark);">⚡ Gap to exploit</span>
+            ${escapeHtml(c.gap)}
+          </div>` : ''}
+
+        ${styleButtonHtml(c)}
+      </div>`;
+  }).join('');
+
+  return `
+    ${oppsHtml}
+    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:14px;">
+      ${cardsHtml}
+    </div>
+  `;
+}
+
+// ---- "Use this style" wiring ----
+function styleButtonHtml(c) {
+  const id = 'style_' + Math.random().toString(36).slice(2, 8);
+  window['_style_' + id] = {
+    name: c.name || 'this creator',
+    hooks: c.hooks || [],
+    what_works: c.what_works || '',
+    topics: c.topics || [],
+    voice_notes: c.voice_notes || '',
+    formats: c.formats || null
+  };
+  return `<button class="btn btn-primary" onclick="useStyle('${id}')" style="align-self:flex-start;">✨ Use this style in Create</button>`;
+}
+
+function useStyle(id) {
+  const s = window['_style_' + id];
+  if (!s) return;
+  styleGuide = s;
+  renderStyleBanner();
+  goTab('create');
+  toast('Style guide active: ' + s.name);
+}
+
+function clearStyle() {
+  styleGuide = null;
+  renderStyleBanner();
+  toast('Style guide cleared');
+}
+
+function pickHook(text) {
+  pickedHook = text;
+  renderStyleBanner();
+  goTab('create');
+  toast('Hook locked: "' + (text || '').slice(0, 50) + (text && text.length > 50 ? '…' : '') + '"');
+}
+
+function clearHook() {
+  pickedHook = null;
+  renderStyleBanner();
+  toast('Hook unlocked');
+}
+
+function renderStyleBanner() {
+  const banner = document.getElementById('style-banner');
+  if (!banner) return;
+  if (!styleGuide && !pickedHook) { banner.innerHTML = ''; return; }
+
+  const styleBlock = styleGuide ? `
+    <div class="card" style="background:var(--primary-light); border:1px solid var(--primary); margin-bottom:10px;">
+      <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:10px;">
+        <div>
+          <div class="label" style="color:var(--primary-dark); margin-bottom:4px;">✨ Writing in this style</div>
+          <div style="font-weight:800; font-size:16px;">${escapeHtml(styleGuide.name)}</div>
+        </div>
+        <button class="btn btn-ghost" onclick="clearStyle()" style="padding:4px 12px; font-size:12px;">× Clear</button>
+      </div>
+      ${styleGuide.hooks && styleGuide.hooks.length ? `<div style="margin-top:10px;"><div class="label" style="margin-bottom:6px; color:var(--primary-dark);">Click a hook to lock it</div><div style="display:flex; flex-wrap:wrap; gap:5px;">${styleGuide.hooks.map(h => `<span class="pill ${pickedHook === h ? 'active' : ''}" onclick="pickHook(${JSON.stringify(h).replace(/"/g, '&quot;')})" style="cursor:pointer;" title="Lock this hook for next generation">${escapeHtml(h)}</span>`).join('')}</div></div>` : ''}
+      ${styleGuide.what_works ? `<div style="margin-top:10px; font-size:12px; color:var(--ink); line-height:1.5;"><span class="label" style="color:var(--primary-dark); display:block; margin-bottom:4px;">Framework</span>${escapeHtml(styleGuide.what_works)}</div>` : ''}
+    </div>` : '';
+
+  const hookBlock = pickedHook ? `
+    <div class="card" style="background:#fff4e6; border:1px solid #BA7517; margin-bottom:14px;">
+      <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:10px;">
+        <div style="flex:1;">
+          <div class="label" style="color:#854F0B; margin-bottom:4px;">🎣 Locked hook (opening line)</div>
+          <div style="font-weight:700; font-size:14px; font-style:italic; line-height:1.4;">"${escapeHtml(pickedHook)}"</div>
+        </div>
+        <button class="btn btn-ghost" onclick="clearHook()" style="padding:4px 12px; font-size:12px;">× Clear hook</button>
+      </div>
+    </div>` : '';
+
+  banner.innerHTML = styleBlock + hookBlock;
+}
+
+async function runManualCompetitor() {
+  const input = $('#manual-comp-input').value.trim();
+  const out = $('#manual-out');
+  if (!input) { out.innerHTML = '<div class="alert alert-err">Paste a URL or post text first.</div>'; return; }
+  const btn = $('#run-manual');
+  const original = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Analyzing...';
+  out.innerHTML = '';
+  try {
+    const isUrl = /^https?:\/\//i.test(input);
+    const prompt = `Analyze this LinkedIn creator for Muhammad Haris Siddiqui's personal brand context.
+
+${isUrl ? `Profile URL provided: ${input}\nUse your knowledge of this creator if you recognize them. If not, infer from the URL handle.` : `Recent post text from the creator:\n"""\n${input}\n"""`}
+
+Return ONLY a JSON object. No prose, no markdown fences. Schema:
+{
+  "name": "creator name (inferred from URL or content if unnamed)",
+  "frequency": "estimated posting frequency",
+  "formats": { "text": int, "carousel": int, "video": int, "image": int },
+  "hooks": ["pattern 1", "pattern 2", "pattern 3"],
+  "topics": ["topic 1", "topic 2", "topic 3"],
+  "what_works": "one sentence on their dominant winning move",
+  "gap": "the specific opening Haris can exploit against this creator (one sentence)",
+  "voice_notes": "what their voice sounds like in 1-2 sentences"
+}`;
+    const text = await callClaude(prompt, null, 2500);
+    const fenced = text.match(/```(?:json)?\s*([\s\S]*?)```/i);
+    const raw = fenced ? fenced[1] : text;
+    const s = raw.indexOf('{'), e = raw.lastIndexOf('}');
+    let data = null;
+    if (s !== -1 && e !== -1) {
+      try { data = JSON.parse(raw.slice(s, e + 1)); } catch {}
+    }
+    if (!data) {
+      out.innerHTML = `<div class="alert alert-info">Claude returned prose. Try again or paste more post text.</div><div class="card" style="margin-top:10px;"><pre style="white-space:pre-wrap; font-family:inherit; font-size:13px; line-height:1.6; margin:0;">${escapeHtml(text)}</pre></div>`;
+      return;
+    }
+    out.innerHTML = renderManualCompetitorCard(data);
+  } catch (err) {
+    out.innerHTML = `<div class="alert alert-err">${escapeHtml(err.message)}${err.message.includes('529') || err.message.toLowerCase().includes('overload') ? '<br><br>Anthropic is overloaded. Wait 30s and try again, or switch to Haiku in Settings.' : ''}</div>`;
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = original;
+  }
+}
+
+function renderManualCompetitorCard(c) {
+  const f = c.formats || {};
+  const total = (f.text || 0) + (f.carousel || 0) + (f.video || 0) + (f.image || 0) || 1;
+  const pct = k => Math.round((f[k] || 0) / total * 100);
+  const name = c.name || 'Unknown creator';
+  return `
+    <div class="card" style="display:flex; flex-direction:column; gap:12px;">
+      <div style="display:flex; align-items:center; gap:12px;">
+        <div style="width:42px; height:42px; border-radius:50%; background:var(--primary); color:#fff; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:14px;">${initials(name)}</div>
+        <div style="flex:1;">
+          <div style="font-weight:800; font-size:15px;">${escapeHtml(name)}</div>
+          <div style="font-size:11px; color:var(--ink-soft); margin-top:2px;">${escapeHtml(c.frequency || '')}</div>
+        </div>
+      </div>
+      <div>
+        <div class="label" style="margin-bottom:6px;">Format mix</div>
+        <div style="display:flex; height:10px; border-radius:999px; overflow:hidden; background:var(--bg-soft);">
+          <div style="width:${pct('text')}%; background:#1D9E75;"></div>
+          <div style="width:${pct('carousel')}%; background:#7F77DD;"></div>
+          <div style="width:${pct('video')}%; background:#D4537E;"></div>
+          <div style="width:${pct('image')}%; background:#BA7517;"></div>
+        </div>
+        <div style="display:flex; justify-content:space-between; margin-top:6px; font-family:'DM Mono',monospace; font-size:10px; color:var(--ink-soft);">
+          <span>Text ${pct('text')}%</span>
+          <span>Carousel ${pct('carousel')}%</span>
+          <span>Video ${pct('video')}%</span>
+          <span>Image ${pct('image')}%</span>
+        </div>
+      </div>
+      ${(c.hooks && c.hooks.length) ? `<div><div class="label" style="margin-bottom:6px;">Hook patterns — click to lock one</div><div style="display:flex; flex-wrap:wrap; gap:5px;">${c.hooks.map(h => `<span class="pill" style="cursor:pointer;" onclick="pickHook(${JSON.stringify(h).replace(/"/g, '&quot;')})" title="Lock this hook for your next post">${escapeHtml(h)}</span>`).join('')}</div></div>` : ''}
+      ${(c.topics && c.topics.length) ? `<div><div class="label" style="margin-bottom:6px;">Top topics</div><div style="display:flex; flex-wrap:wrap; gap:5px;">${c.topics.map(t => `<span class="pill active">${escapeHtml(t)}</span>`).join('')}</div></div>` : ''}
+      ${c.voice_notes ? `<div style="font-size:12px; color:var(--ink); line-height:1.5; background:var(--bg-soft); padding:10px; border-radius:8px;"><span class="label" style="display:block; margin-bottom:4px;">Voice</span>${escapeHtml(c.voice_notes)}</div>` : ''}
+      ${c.what_works ? `<div style="font-size:12px; line-height:1.5; background:var(--bg-soft); padding:10px; border-radius:8px;"><span class="label" style="display:block; margin-bottom:4px;">What works</span>${escapeHtml(c.what_works)}</div>` : ''}
+      ${c.gap ? `<div style="font-size:12px; color:var(--primary-dark); line-height:1.5; background:var(--primary-light); padding:10px; border-radius:8px; border-left:3px solid var(--primary);"><span class="label" style="display:block; margin-bottom:4px; color:var(--primary-dark);">⚡ Gap Haris can exploit</span>${escapeHtml(c.gap)}</div>` : ''}
+      ${styleButtonHtml(c)}
+    </div>`;
+}
+
+// Read URL params on load — extension drops captured content here
+(function readUrlParams() {
+  try {
+    const params = new URLSearchParams(window.location.search);
+    const paste = params.get('paste');
+    if (paste) {
+      // wait for DOM then prefill manual analysis
+      setTimeout(() => {
+        const el = document.getElementById('manual-comp-input');
+        if (el) { el.value = paste; goTab('competitors'); el.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
+      }, 300);
+    }
+  } catch {}
+})();
+
+async function runCompetitorAnalysis() {
+  const btn = $('#run-comp');
+  const out = $('#comp-out');
+  out.innerHTML = '';
+  btn.disabled = true;
+  const original = btn.innerHTML;
+  btn.innerHTML = '<span class="spinner"></span> Analyzing...';
+  try {
+    const text = await callClaude(COMPETITOR_PROMPT, null, 4000);
+    let data = null;
+    // try object JSON first
+    const fenced = text.match(/```(?:json)?\s*([\s\S]*?)```/i);
+    const raw = fenced ? fenced[1] : text;
+    const s = raw.indexOf('{'), e = raw.lastIndexOf('}');
+    if (s !== -1 && e !== -1) {
+      try { data = JSON.parse(raw.slice(s, e + 1)); } catch {}
+    }
+    if (!data || !data.competitors) {
+      // graceful fallback: show raw if parsing fails
+      out.innerHTML = `<div class="alert alert-info">Claude returned prose instead of JSON. Click Run Deep Analysis again — usually works on retry.</div>
+        <div class="card" style="margin-top:12px;"><pre style="white-space:pre-wrap; font-family:inherit; font-size:13px; line-height:1.6; margin:0;">${escapeHtml(text)}</pre></div>`;
+      return;
+    }
+    out.innerHTML = renderCompetitorAnalysis(data);
+  } catch (e) {
+    out.innerHTML = `<div class="alert alert-err">${escapeHtml(e.message)}</div>`;
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = original;
+  }
+}
+
+// ---- SUGGESTIONS ----
+$$('[data-mode]').forEach(p => p.addEventListener('click', () => {
+  $$('[data-mode]').forEach(x => x.classList.remove('active'));
+  p.classList.add('active');
+  selectedScanMode = p.dataset.mode;
+}));
+
+async function runSuggestions() {
+  const btn = $('#run-sugg');
+  const out = $('#sugg-out');
+  out.innerHTML = '';
+  btn.disabled = true;
+  const original = btn.innerHTML;
+  btn.innerHTML = '<span class="spinner"></span> Scanning...';
+  try {
+    const userMessage = SUGGESTIONS_PROMPT + '\n\nScan depth: ' + selectedScanMode + '.';
+    const text = await callClaude(userMessage, null, 3500);
+    const parsed = extractJson(text);
+    if (!parsed) throw new Error('Could not parse JSON. Try again.');
+    out.innerHTML = renderCategorizedSuggestions(parsed);
+  } catch (e) {
+    out.innerHTML = `<div class="alert alert-err">${escapeHtml(e.message)}${e.message.includes('529') || e.message.toLowerCase().includes('overload') ? '<br><br>Anthropic is overloaded. Wait 30s and click Run Scan again, or open Settings and switch to claude-haiku-4-5 (faster, almost never overloads).' : ''}</div>`;
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = original;
+  }
+}
+
+const CATEGORY_META = {
+  what_is_working: { label: 'What is working now', icon: '⚡', color: '#1D9E75' },
+  trending_topics: { label: 'Trending topics',     icon: '📈', color: '#D85A30' },
+  hook_patterns:   { label: 'Hook patterns winning', icon: '🎣', color: '#7F77DD' },
+  topics_for_you:  { label: 'Topics for you',     icon: '✦', color: '#534AB7' }
+};
+
+function renderCategorizedSuggestions(items) {
+  const groups = { what_is_working: [], trending_topics: [], hook_patterns: [], topics_for_you: [] };
+  items.forEach(it => {
+    const c = it.category || 'topics_for_you';
+    if (!groups[c]) groups[c] = [];
+    groups[c].push(it);
+  });
+
+  return ['what_is_working', 'trending_topics', 'hook_patterns', 'topics_for_you'].map(key => {
+    const meta = CATEGORY_META[key];
+    const list = groups[key] || [];
+    if (!list.length) return '';
+    return `
+      <div style="margin-bottom:24px;">
+        <div style="display:flex; align-items:center; gap:8px; margin-bottom:10px;">
+          <span style="font-size:18px;">${meta.icon}</span>
+          <h3 style="font-size:16px; color:${meta.color};">${meta.label}</h3>
+          <span style="flex:1; height:1px; background:${meta.color}; opacity:0.25;"></span>
+        </div>
+        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(260px, 1fr)); gap:12px;">
+          ${list.map(s => renderSuggestion(s, key)).join('')}
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function renderSuggestion(s, category) {
+  const score = Number(s.score) || 0;
+  const scoreClass = score >= 8 ? 'success' : score >= 6 ? 'active' : '';
+  const id = 'sug_' + Math.random().toString(36).slice(2, 8);
+  // store with normalized fields for useSuggestion()
+  window['_sug_' + id] = {
+    topic: s.title || s.topic || '',
+    hook: s.hook || s.example || '',
+    format: s.format || 'text',
+    why: s.why || ''
+  };
+  const isActionable = category === 'topics_for_you';
+  const meta = CATEGORY_META[category] || {};
+  return `
+    <div class="card" style="display:flex; flex-direction:column; gap:10px; border-left:3px solid ${meta.color || 'var(--border)'};">
+      <div style="display:flex; justify-content:space-between; gap:8px;">
+        <div style="font-weight:800; font-size:14px; line-height:1.35;">${escapeHtml(s.title || s.topic || '')}</div>
+        <span class="pill ${scoreClass}">${score}/10</span>
+      </div>
+      <div style="font-size:12px; color:var(--ink-soft); line-height:1.55;">${escapeHtml(s.why || '')}</div>
+      ${(s.hook || s.example) ? `<div style="border-left: 2px solid var(--primary); padding-left:10px; font-size:12px; font-style:italic;">${escapeHtml(s.hook || s.example)}</div>` : ''}
+      ${s.format ? `<span class="pill" style="align-self:flex-start;">${escapeHtml(s.format)}</span>` : ''}
+      ${isActionable ? `<button class="btn btn-ghost" onclick="useSuggestion('${id}')" style="align-self:flex-start;">→ Use in Create</button>` : ''}
+    </div>`;
+}
+
+function useSuggestion(id) {
+  const s = window['_sug_' + id];
+  if (!s) return;
+  const seed = (s.topic || '') + (s.hook ? '\n\nHook angle: ' + s.hook : '');
+  $('#create-input').value = seed;
+  if (s.format) {
+    const map = { 'carousel': 'Carousel', 'text': 'Text post', 'image+text': 'Image + text', 'short-video': 'Text post' };
+    selectedFormat = map[s.format] || 'Text post';
+    renderFmtPills();
+  }
+  goTab('create');
+}
+
+// ---- CREATE ----
+function renderFwPills() {
+  $('#fw-pills').innerHTML = FRAMEWORKS.map(f => `<span class="pill ${selectedFramework === f ? 'active' : ''}" onclick="selectedFramework='${f}'; renderFwPills();">${f}</span>`).join('');
+}
+function renderFmtPills() {
+  $('#fmt-pills').innerHTML = POST_FORMATS.map(f => `<span class="pill ${selectedFormat === f ? 'active' : ''}" onclick="selectedFormat='${f}'; renderFmtPills();">${f}</span>`).join('');
+}
+function renderCtaPills() {
+  const el = document.getElementById('cta-pills');
+  if (!el) return;
+  const ctas = getCtas();
+  const noneActive = !selectedCta;
+  const autoActive = selectedCta && selectedCta._auto;
+  const items = [
+    `<span class="pill ${noneActive ? 'active' : ''}" onclick="selectedCta=null; renderCtaPills();" style="cursor:pointer;">None</span>`,
+    `<span class="pill ${autoActive ? 'active' : ''}" onclick="selectedCta={_auto:true}; renderCtaPills();" style="cursor:pointer;" title="Claude picks the most relevant CTA from your list based on the post topic">✨ Auto-pick</span>`,
+    ...ctas.map((c, i) => `<span class="pill ${selectedCta && selectedCta.url === c.url ? 'active' : ''}" onclick="selectedCta=getCtas()[${i}]; renderCtaPills();" style="cursor:pointer;" title="${escapeHtml(c.url)}">${escapeHtml(c.label)}</span>`)
+  ];
+  el.innerHTML = items.join('');
+}
+
+async function runCreate() {
+  const input = $('#create-input').value.trim();
+  const err = $('#create-err');
+  const out = $('#create-out');
+  err.innerHTML = '';
+  if (!input) { err.innerHTML = '<div class="alert alert-err">Drop in a story or topic first.</div>'; return; }
+  const btn = $('#run-create');
+  const original = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Writing 4 variations...';
+  out.innerHTML = '';
+  try {
+    let styleAddition = '';
+    if (styleGuide) {
+      styleAddition = '\n\n## STYLE GUIDE — emulate the structure and hook style of this creator\n' +
+        'Creator: ' + styleGuide.name + '\n' +
+        (styleGuide.hooks && styleGuide.hooks.length ? 'Hook patterns to borrow: ' + styleGuide.hooks.join(' | ') + '\n' : '') +
+        (styleGuide.what_works ? 'Their framework: ' + styleGuide.what_works + '\n' : '') +
+        (styleGuide.voice_notes ? 'Their voice notes: ' + styleGuide.voice_notes + '\n' : '') +
+        '\nImportant: BORROW the structural framework and hook patterns. KEEP Haris\'s own voice rules (first person, no dashes, no AI smell, story first then insight). The result should sound like Haris using this creator\'s playbook, not like the creator themselves.';
+    }
+    const hookAddition = pickedHook ? '\n\n## LOCKED HOOK — every variation must use this EXACT opening line (or a very close paraphrase that keeps the structure):\n"' + pickedHook + '"\nThe rest of the post is free.' : '';
+    const ctaAddition = buildCtaAddition();
+    const frameworkAddition = referenceFramework ? '\n\n## REFERENCE FRAMEWORK ATTACHED\nThe image attached is a screenshot of a LinkedIn post that uses a content framework Haris wants to mimic. Read its structure carefully — how it opens, how it builds, how it lands, paragraph rhythm, line breaks, where the insight drops. Apply that EXACT structural framework to all 4 variations, with Haris\'s own story and voice (first person, no dashes, no AI smell).' : '';
+    const images = referenceFramework ? [referenceFramework] : null;
+    const userMessage = WRITER_PROMPT + styleAddition + hookAddition + ctaAddition + frameworkAddition + '\n\nUser input / story:\n' + input + '\n\nFramework focus: ' + selectedFramework + '\nPreferred format: ' + selectedFormat;
+    const text = await callClaude(userMessage, null, 3500, images);
+    const parsed = extractJson(text);
+    if (!parsed) throw new Error('Could not parse JSON. Try again.');
+    out.innerHTML = `<div class="row-2">${parsed.map(renderPost).join('')}</div>`;
+    out.dataset.round = '1';
+    const regen = document.getElementById('regen-card');
+    if (regen) regen.style.display = '';
+  } catch (e) {
+    err.innerHTML = `<div class="alert alert-err">${escapeHtml(e.message)}${e.message.includes('529') || e.message.toLowerCase().includes('overload') ? '<br><br>Anthropic is overloaded. Wait 30s and try again, or switch to Haiku in Settings.' : ''}</div>`;
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = original;
+  }
+}
+
+function renderPost(p) {
+  const id = 'p' + Math.random().toString(36).slice(2, 8);
+  window['_post_' + id] = p;
+  return postCardHtml(id);
+}
+
+function postCardHtml(id, opts) {
+  const p = window['_post_' + id];
+  if (!p) return '';
+  const editing = !!(opts && opts.editing);
+  const showCanva = ['carousel', 'image+text', 'Carousel', 'Image + text'].includes(p.format);
+  const hasBrief = !!p._brief;
+
+  return `
+    <div class="post-card" id="card-${id}">
+      <div class="head">
+        <span class="pill active">${escapeHtml(p.framework || '')}</span>
+        <span class="pill">${escapeHtml(p.format || '')}</span>
+      </div>
+      ${editing ? `
+        <input class="input" id="hook-${id}" value="${escapeHtml(p.hook || '')}" style="font-weight:800; font-size:16px;" />
+        <textarea class="textarea" id="body-${id}" style="min-height:200px;">${escapeHtml(p.post || '')}</textarea>
+        <div style="display:flex; gap:8px; flex-wrap:wrap;">
+          <button class="btn btn-primary" onclick="savePost('${id}')">✓ Save edits</button>
+          <button class="btn btn-ghost" onclick="cancelEdit('${id}')">× Cancel</button>
+        </div>
+      ` : `
+        <div class="hook" onclick="editPost('${id}')" style="cursor:text;" title="Click to edit">${escapeHtml(p.hook || '')}</div>
+        <div class="body" onclick="editPost('${id}')" style="cursor:text;" title="Click to edit">${escapeHtml(p.post || '')}</div>
+        ${p.why ? `<div class="why"><span class="label" style="display:block; margin-bottom:4px;">Why this works</span>${escapeHtml(p.why)}</div>` : ''}
+        <div style="display:flex; gap:8px; flex-wrap:wrap;">
+          <button class="btn btn-ghost" onclick="editPost('${id}')">✎ Edit</button>
+          <button class="btn btn-ghost" onclick="copyPost('${id}')">⧉ Copy</button>
+          ${showCanva ? `<button class="btn btn-ghost" onclick="openDesigner('${id}')">🎨 Design graphic</button>` : `<button class="btn btn-ghost" onclick="openDesigner('${id}')">🎨 Design graphic</button>`}
+          <button class="btn btn-primary" onclick="sendToSchedule('${id}')">📅 Send to Schedule</button>
+        </div>
+      `}
+      ${hasBrief ? renderCanvaBrief(id, p._brief) : `<div id="brief-${id}"></div>`}
+    </div>`;
+}
+
+function editPost(id) {
+  const card = document.getElementById('card-' + id);
+  if (!card) return;
+  card.outerHTML = postCardHtml(id, { editing: true });
+}
+
+function savePost(id) {
+  const p = window['_post_' + id];
+  if (!p) return;
+  p.hook = document.getElementById('hook-' + id).value;
+  p.post = document.getElementById('body-' + id).value;
+  window['_post_' + id] = p;
+  const card = document.getElementById('card-' + id);
+  if (card) card.outerHTML = postCardHtml(id);
+  toast('Edit saved');
+}
+
+function cancelEdit(id) {
+  const card = document.getElementById('card-' + id);
+  if (card) card.outerHTML = postCardHtml(id);
+}
+
+function refreshCard(id) {
+  const card = document.getElementById('card-' + id);
+  if (card) card.outerHTML = postCardHtml(id);
+}
+
+// ---- Canva carousel / graphic brief ----
+async function buildCanvaBrief(id) {
+  const p = window['_post_' + id];
+  if (!p) return;
+  const briefEl = document.getElementById('brief-' + id);
+  if (briefEl) briefEl.innerHTML = '<div style="padding:12px; font-size:13px; color:var(--ink-soft);"><span class="spinner"></span> Designing the carousel brief...</div>';
+
+  const isCarousel = /carousel/i.test(p.format);
+  const styleNote = styleGuide ? `\nStyle reference: emulate ${styleGuide.name}'s visual feel — ${styleGuide.what_works || 'their dominant approach'}.` : '';
+  const refNote = referenceGraphic ? `\n\nA REFERENCE GRAPHIC IS ATTACHED. Match its visual style — layout, color feel, typography hierarchy, density of text-vs-image, overall mood. Use it as the north-star for the brief.` : '';
+  const prompt = `Design a ${isCarousel ? 'LinkedIn carousel' : 'single-image LinkedIn graphic'} brief based on this post for Muhammad Haris Siddiqui.${refNote}
+
+POST HOOK: ${p.hook || ''}
+POST BODY: ${p.post || ''}${styleNote}
+
+Brand colors:
+- Primary purple: #7F77DD
+- Primary dark: #534AB7
+- Accent green: #1D9E75
+- Background cream: #F6F5F2
+
+Brand fonts: Syne (headings, bold weight) and DM Mono (labels, small caps style).
+
+Return ONLY a JSON object. No prose, no markdown fences. Schema:
+{
+  "visual_style": "1-2 sentences describing the overall look and feel",
+  "color_palette": ["#hex1", "#hex2", "#hex3"],
+  "font_recommendation": "Syne 800 for titles, Syne 400 for body, DM Mono 500 for labels",
+  "slides": [
+    { "n": 1, "role": "hook slide / value slide / conclusion / etc", "title": "punchy headline (max 8 words)", "body": "supporting line (1-2 sentences)", "visual": "what to put on this slide — describe the visual element" }
+    // 6 to 8 slides for carousel; 1 slide for image+text
+  ],
+  "canva_template_query": "one search query to use in Canva — e.g. 'LinkedIn carousel minimal purple'",
+  "image_references": ["1-2 sentence visual reference, e.g. 'On-set behind-the-scenes photo, grainy texture, warm tones'", "..."]
+}`;
+
+  try {
+    const images = referenceGraphic ? [referenceGraphic] : null;
+    const text = await callClaude(prompt, null, 3000, images);
+    const fenced = text.match(/```(?:json)?\s*([\s\S]*?)```/i);
+    const raw = fenced ? fenced[1] : text;
+    const s = raw.indexOf('{'), e = raw.lastIndexOf('}');
+    if (s === -1 || e === -1) throw new Error('Could not parse brief');
+    const brief = JSON.parse(raw.slice(s, e + 1));
+    p._brief = brief;
+    window['_post_' + id] = p;
+    refreshCard(id);
+  } catch (err) {
+    if (briefEl) briefEl.innerHTML = `<div class="alert alert-err">${escapeHtml(err.message)}${err.message.includes('529') || err.message.toLowerCase().includes('overload') ? '<br><br>Anthropic is overloaded. Try again or switch to Haiku in Settings.' : ''}</div>`;
+  }
+}
+
+function renderCanvaBrief(id, brief) {
+  if (!brief) return '';
+  const slides = brief.slides || [];
+  const colors = (brief.color_palette || []).map(c => `<span style="display:inline-block; width:18px; height:18px; border-radius:4px; background:${c}; border:1px solid var(--border); margin-right:4px; vertical-align:middle;" title="${c}"></span>`).join('');
+  const slidesHtml = slides.map(s => `
+    <div style="background:var(--bg-soft); border-radius:8px; padding:12px; margin-bottom:8px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+        <div style="font-weight:800; font-size:13px;">Slide ${s.n}</div>
+        <span class="pill">${escapeHtml(s.role || '')}</span>
+      </div>
+      <div style="font-weight:700; font-size:14px; line-height:1.35;">${escapeHtml(s.title || '')}</div>
+      ${s.body ? `<div style="font-size:12px; color:var(--ink-soft); margin-top:4px; line-height:1.5;">${escapeHtml(s.body)}</div>` : ''}
+      ${s.visual ? `<div style="font-size:11px; color:var(--primary-dark); margin-top:6px; line-height:1.5;"><span class="label" style="display:inline; color:var(--primary-dark);">Visual:</span> ${escapeHtml(s.visual)}</div>` : ''}
+    </div>`).join('');
+
+  const briefText = JSON.stringify(brief, null, 2);
+  const briefId = 'brief-text-' + id;
+  window[briefId] = briefText;
+  const canvaQuery = brief.canva_template_query ? encodeURIComponent(brief.canva_template_query) : 'LinkedIn+carousel';
+
+  return `
+    <div style="background:var(--primary-light); border:1px solid var(--primary); border-radius:10px; padding:14px; margin-top:6px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:10px;">
+        <div style="font-weight:800; font-size:14px; color:var(--primary-dark);">🎨 Canva brief — ${slides.length} slide${slides.length === 1 ? '' : 's'}</div>
+        <div style="display:flex; gap:6px;">
+          <button class="btn btn-ghost" style="padding:4px 10px; font-size:11px;" onclick="copyBrief('${id}')">⧉ Copy full brief</button>
+          <a href="https://www.canva.com/search/templates?q=${canvaQuery}" target="_blank" rel="noopener" style="text-decoration:none;"><button class="btn btn-primary" style="padding:4px 10px; font-size:11px;">→ Open Canva</button></a>
+        </div>
+      </div>
+      ${brief.visual_style ? `<div style="font-size:12px; color:var(--ink); line-height:1.5; margin-bottom:10px;"><span class="label" style="display:block; margin-bottom:2px; color:var(--primary-dark);">Visual style</span>${escapeHtml(brief.visual_style)}</div>` : ''}
+      <div style="display:flex; gap:14px; align-items:center; margin-bottom:10px; flex-wrap:wrap;">
+        ${colors ? `<div><span class="label" style="margin-right:6px; color:var(--primary-dark);">Colors</span>${colors}</div>` : ''}
+        ${brief.font_recommendation ? `<div style="font-size:11px; color:var(--ink-soft);"><span class="label" style="color:var(--primary-dark); margin-right:4px;">Fonts</span>${escapeHtml(brief.font_recommendation)}</div>` : ''}
+      </div>
+      <div>${slidesHtml}</div>
+      ${(brief.image_references && brief.image_references.length) ? `<div style="margin-top:8px;"><div class="label" style="color:var(--primary-dark); margin-bottom:4px;">Reference imagery</div>${brief.image_references.map(r => `<div style="font-size:12px; color:var(--ink-soft); line-height:1.5; padding:4px 0;">• ${escapeHtml(r)}</div>`).join('')}</div>` : ''}
+    </div>`;
+}
+
+async function copyBrief(id) {
+  const text = window['brief-text-' + id];
+  if (!text) return;
+  try { await navigator.clipboard.writeText(text); toast('Brief copied — paste in Canva'); }
+  catch { toast('Copy failed'); }
+}
+
+// ---- Regenerate variations ----
+async function regenerateVariations() {
+  const refinement = $('#regen-input').value.trim();
+  const lastInput = $('#create-input').value.trim();
+  if (!lastInput) { toast('Need a story in the input box first'); return; }
+  const btn = $('#run-regen');
+  const original = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Generating 4 more…';
+  try {
+    let styleAddition = '';
+    if (styleGuide) {
+      styleAddition = '\n\n## STYLE GUIDE — emulate the structure and hook style of this creator\nCreator: ' + styleGuide.name + '\n' +
+        (styleGuide.hooks && styleGuide.hooks.length ? 'Hook patterns: ' + styleGuide.hooks.join(' | ') + '\n' : '') +
+        (styleGuide.what_works ? 'Framework: ' + styleGuide.what_works + '\n' : '') +
+        '\nBorrow the framework. Keep Haris\'s voice.';
+    }
+    const ctaAddition = buildCtaAddition();
+    const refinementBlock = refinement ? '\n\n## REFINEMENT REQUEST FROM HARIS:\nThe previous batch was not quite right. Adjust based on this guidance:\n' + refinement : '\n\n## NOTE: Generate 4 FRESH variations, different from any prior round — different opening lines, different framings.';
+    const hookAddition = pickedHook ? '\n\n## LOCKED HOOK:\n"' + pickedHook + '"' : '';
+    const frameworkAddition = referenceFramework ? '\n\n## REFERENCE FRAMEWORK ATTACHED\nApply the structural framework from the attached LinkedIn screenshot to all 4 variations.' : '';
+    const images = referenceFramework ? [referenceFramework] : null;
+    const userMessage = WRITER_PROMPT + styleAddition + hookAddition + ctaAddition + frameworkAddition + refinementBlock + '\n\nUser input / story:\n' + lastInput + '\n\nFramework focus: ' + selectedFramework + '\nPreferred format: ' + selectedFormat;
+    const text = await callClaude(userMessage, null, 3500, images);
+    const parsed = extractJson(text);
+    if (!parsed) throw new Error('Could not parse variations.');
+    const out = $('#create-out');
+    const round = (parseInt(out.dataset.round || '1', 10) + 1);
+    out.dataset.round = String(round);
+    const newCards = parsed.map(renderPost).join('');
+    out.insertAdjacentHTML('beforeend', `<div style="grid-column:1/-1; margin:18px 0 8px;"><div class="label">Round ${round}${refinement ? ' — ' + escapeHtml(refinement.slice(0, 80)) : ''}</div></div>${newCards}`);
+    $('#regen-input').value = '';
+  } catch (e) {
+    toast('Regenerate failed: ' + e.message);
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = original;
+  }
+}
+
+function buildCtaAddition() {
+  if (!selectedCta) return '';
+  if (selectedCta._auto) {
+    const ctas = getCtas();
+    if (!ctas.length) return '';
+    return '\n\n## CTA — AUTO-PICK\nThe creator has these pages on his website (https://www.next-flow.de). Pick the ONE most relevant to the post topic and weave a natural one-line CTA linking to it at the end of each variation. Different posts can use different links if the topics differ.\n\nAvailable pages:\n' +
+      ctas.map(c => `- "${c.label}" → ${c.url}${c.hint ? ' — use when: ' + c.hint : ''}`).join('\n') +
+      '\n\nMake the CTA sound human, not promotional. First person. No "click here". Examples: "I built X for this — [url]" or "If this resonates, I put together [thing] at [url]".';
+  }
+  return '\n\n## CTA TO INCLUDE\nEnd each post with a natural, one-line CTA pointing to: ' + selectedCta.url +
+    '\nCTA context: "' + selectedCta.label + '" — ' + (selectedCta.hint || '') +
+    '\nMake the CTA sound human, not promotional. First person. No "click here". Examples: "I built X for this — link in the comments" or "If this resonates, I put together [thing] at [url]".';
+}
+
+async function copyPost(id) {
+  const p = window['_post_' + id];
+  if (!p) return;
+  try { await navigator.clipboard.writeText(p.post || ''); toast('Copied to clipboard'); }
+  catch { toast('Copy failed'); }
+}
+
+function sendToSchedule(id) {
+  const p = window['_post_' + id];
+  if (!p) return;
+  const days = ['Mon', 'Wed', 'Thu', 'Fri'];
+  const next = days.find(d => !queue.some(q => q.day === d)) || days[0];
+  queue = queue.filter(q => q.day !== next).concat([{ day: next, post: p.post, framework: p.framework }]);
+  localStorage.setItem('nf_queue', JSON.stringify(queue));
+  renderSchedule();
+  goTab('schedule');
+  toast('Added to ' + next);
+}
+
+// ---- SCHEDULE ----
+function renderSchedule() {
+  $('#sched-grid').innerHTML = SLOTS.map(s => {
+    const q = queue.find(x => x.day === s.day);
+    return `
+      <div class="card" style="display:flex; flex-direction:column; gap:6px;">
+        <div style="display:flex; justify-content:space-between;">
+          <div style="font-size:22px; font-weight:800;">${s.day}</div>
+          <span class="pill">${s.time} CET</span>
+        </div>
+        <div style="font-size:12px; color:var(--ink-soft);">${s.format}</div>
+        <div class="mono" style="font-size:10px; text-transform:uppercase; letter-spacing:0.08em; color:var(--ink-soft);">Score ${s.score}/10</div>
+        <div style="border-top:1px dashed var(--border); padding-top:8px; margin-top:4px; font-size:12px; line-height:1.5;">
+          ${q ? escapeHtml((q.post || '').slice(0, 220)) + '…' : '<span style="font-style:italic; color:var(--ink-soft);">Empty — generate in Create</span>'}
+        </div>
+        ${q ? `<button class="btn btn-ghost" style="font-size:11px; padding:6px 10px;" onclick="clearSlot('${s.day}')">× Clear</button>` : ''}
+      </div>`;
+  }).join('');
+}
+
+function clearSlot(day) {
+  queue = queue.filter(q => q.day !== day);
+  localStorage.setItem('nf_queue', JSON.stringify(queue));
+  renderSchedule();
+}
+
+// ---- Canva integration (only active when hosted on Vercel) ----
+async function checkCanvaStatus() {
+  if (!IS_HOSTED) return;
+  try {
+    const r = await fetch('/api/canva/auth/status');
+    const data = await r.json();
+    canvaConnected = !!data.connected;
+    renderCanvaStatus();
+  } catch {}
+}
+
+function renderCanvaStatus() {
+  const el = document.getElementById('canva-status-row');
+  if (!el) return;
+  if (!IS_HOSTED) {
+    el.innerHTML = '<div style="font-size:12px; color:var(--ink-soft); line-height:1.5;">Canva integration requires the hosted version (Vercel). You\'re currently running the local HTML — slide PNGs still download fine; Canva push needs the hosted app.</div>';
+    return;
+  }
+  if (canvaConnected) {
+    el.innerHTML = `
+      <span class="pill success"><span class="dot"></span>Canva connected</span>
+      <button class="btn btn-ghost" onclick="disconnectCanva()" style="padding:4px 12px; font-size:11px;">Disconnect</button>`;
+  } else {
+    el.innerHTML = `
+      <span class="pill" style="background:#fff4e6; border-color:#BA7517; color:#854F0B;">Canva not connected</span>
+      <button class="btn btn-primary" onclick="connectCanva()" style="padding:4px 12px; font-size:11px;">Connect Canva</button>`;
+  }
+}
+
+function connectCanva() {
+  if (!IS_HOSTED) { toast('Deploy to Vercel first — see README.'); return; }
+  const w = window.open('/api/canva/auth/start', 'canva-auth', 'width=600,height=720');
+  if (!w) { window.location.href = '/api/canva/auth/start'; return; }
+  // Poll until the popup closes / posts back
+  window.addEventListener('message', function once(e) {
+    if (e.data && e.data.type === 'canva-connected') {
+      window.removeEventListener('message', once);
+      setTimeout(checkCanvaStatus, 300);
+    }
+  });
+  const t = setInterval(() => {
+    if (w.closed) { clearInterval(t); checkCanvaStatus(); }
+  }, 800);
+}
+
+async function disconnectCanva() {
+  await fetch('/api/canva/auth/disconnect', { method: 'POST' });
+  canvaConnected = false;
+  renderCanvaStatus();
+  toast('Canva disconnected');
+}
+
+async function pushSlidesToCanva() {
+  if (!IS_HOSTED) { toast('Push to Canva requires the hosted version.'); return; }
+  if (!canvaConnected) { toast('Connect Canva first in Settings.'); openSettings(); return; }
+  const slides = document.querySelectorAll('.slide-canvas');
+  if (!slides.length) { toast('Generate slides first.'); return; }
+
+  const btn = document.getElementById('push-canva-btn');
+  if (btn) { btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Uploading to Canva...'; }
+  toast('Pushing ' + slides.length + ' slide(s) to Canva...');
+
+  try {
+    const asset_ids = [];
+    for (let i = 0; i < slides.length; i++) {
+      const el = slides[i];
+      const prevTransform = el.style.transform;
+      el.style.transform = 'none';
+      let dataUrl;
+      try {
+        const canvas = await html2canvas(el, { scale: 2, backgroundColor: null, logging: false, useCORS: true });
+        dataUrl = canvas.toDataURL('image/png');
+      } finally {
+        el.style.transform = prevTransform;
+      }
+      const base64 = dataUrl.replace(/^data:image\/png;base64,/, '');
+      const upR = await fetch('/api/canva/upload-asset', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: 'nextflow-slide-' + (i + 1) + '.png', image_base64: base64, media_type: 'image/png' })
+      });
+      const upData = await upR.json();
+      if (!upR.ok) throw new Error('Upload failed (slide ' + (i + 1) + '): ' + (upData.error || ''));
+      asset_ids.push(upData.asset_id);
+      if (btn) btn.innerHTML = `<span class="spinner"></span> Uploaded ${i + 1}/${slides.length}...`;
+    }
+    const createR = await fetch('/api/canva/create-design', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ asset_ids, title: 'Next-Flow — ' + new Date().toLocaleDateString() })
+    });
+    const createData = await createR.json();
+    if (!createR.ok) throw new Error(createData.error || 'Design creation failed');
+    document.getElementById('canva-result').innerHTML = `
+      <div class="card" style="background:var(--primary-light); border:1px solid var(--primary); margin-top:14px;">
+        <div style="font-weight:800; font-size:14px; color:var(--primary-dark); margin-bottom:6px;">✓ Design pushed to Canva</div>
+        <div style="font-size:12px; color:var(--ink-soft); margin-bottom:10px; line-height:1.5;">${escapeHtml(createData.note || '')}</div>
+        <a href="${createData.edit_url}" target="_blank" rel="noopener" style="text-decoration:none;"><button class="btn btn-primary">→ Open design in Canva</button></a>
+      </div>`;
+    toast('Pushed to Canva ✓');
+  } catch (e) {
+    toast('Push failed: ' + e.message);
+    document.getElementById('canva-result').innerHTML = `<div class="alert alert-err">${escapeHtml(e.message)}</div>`;
+  } finally {
+    if (btn) { btn.disabled = false; btn.innerHTML = '☁ Push slides to Canva'; }
+  }
+}
+
+// ---- init ----
+renderAgents();
+renderFormats();
+renderCompetitors();
+renderFwPills();
+renderFmtPills();
+renderCtaPills();
+renderSchedule();
+refreshKeyStatus();
+checkCanvaStatus();
+</script>
+</body>
+</html>

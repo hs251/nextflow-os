@@ -1,0 +1,7 @@
+{
+  "name": "nextflow-os-vercel",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Next-Flow LinkedIn OS — deployed to Vercel with real Canva integration",
+  "engines": { "node": ">=18" }
+}

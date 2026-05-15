@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Deploy Next-Flow LinkedIn OS</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root { --primary: #7F77DD; --primary-dark: #534AB7; --primary-light: #EEEDFE; --accent: #1D9E75; --bg-soft: #F6F5F2; --ink: #1A1A18; --ink-soft: #6B6B67; --border: rgba(0,0,0,0.09); }
+  * { box-sizing: border-box; }
+  body { max-width: 780px; margin: 40px auto; padding: 0 24px 80px; font-family: 'Syne', system-ui, sans-serif; background: var(--bg-soft); color: var(--ink); line-height: 1.65; }
+  h1 { font-weight: 800; font-size: 32px; margin-bottom: 6px; letter-spacing: -0.01em; }
+  h2 { font-weight: 800; font-size: 20px; margin: 32px 0 12px; }
+  .mono { font-family: 'DM Mono', monospace; }
+  .sub { font-family: 'DM Mono', monospace; font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--ink-soft); }
+  .step { background: #fff; border: 1px solid var(--border); border-radius: 12px; padding: 22px 26px; margin: 16px 0; display: flex; gap: 18px; align-items: flex-start; box-shadow: 0 1px 2px rgba(0,0,0,0.03); }
+  .num { background: var(--primary); color: #fff; width: 36px; height: 36px; border-radius: 999px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 15px; }
+  .body { flex: 1; }
+  .body h3 { font-size: 16px; font-weight: 800; margin: 0 0 6px; }
+  .body p { margin: 6px 0; font-size: 14px; }
+  .body p strong { color: var(--primary-dark); }
+  code { font-family: 'DM Mono', monospace; background: var(--primary-light); color: var(--primary-dark); padding: 2px 8px; border-radius: 4px; font-size: 12px; }
+  .pre-block { background: var(--ink); color: #fff; padding: 12px 14px; border-radius: 8px; font-family: 'DM Mono', monospace; font-size: 12px; line-height: 1.6; overflow-x: auto; margin: 8px 0; }
+  .callout { background: var(--primary-light); border-left: 3px solid var(--primary); padding: 14px 18px; border-radius: 8px; margin: 20px 0; font-size: 14px; }
+  .callout strong { color: var(--primary-dark); }
+  .mark-row { display: inline-flex; align-items: center; gap: 12px; margin-bottom: 18px; }
+  .mark-row .mark { width: 42px; height: 42px; background: var(--primary); color: #fff; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 15px; }
+  .pill { display: inline-block; background: var(--primary-light); color: var(--primary-dark); padding: 3px 9px; border-radius: 999px; font-family: 'DM Mono', monospace; font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; font-weight: 500; }
+  .pill-warn { background: #fff4e6; color: #854F0B; }
+  a { color: var(--primary-dark); font-weight: 600; }
+  .checklist { background: #fff; border: 1px solid var(--border); border-radius: 12px; padding: 18px 22px; margin: 16px 0; }
+  .checklist li { margin: 6px 0; font-size: 14px; list-style: none; padding-left: 24px; position: relative; }
+  .checklist li::before { content: "☐"; position: absolute; left: 0; color: var(--primary); font-size: 16px; }
+</style>
+</head>
+<body>
+
+<div class="mark-row">
+  <div class="mark">NF</div>
+  <div>
+    <h1 style="margin:0; font-size:26px;">Deploy your LinkedIn OS</h1>
+    <div class="sub">Real Canva integration · ~20 minutes · no terminal</div>
+  </div>
+</div>
+
+<div class="callout">
+  <strong>What you'll have at the end:</strong> a real URL like <code>nextflow-os-haris.vercel.app</code> that you can open from any device. Click "Connect Canva" once → push slides directly into editable Canva designs from now on.
+</div>
+
+<h2>Before you start — checklist</h2>
+<div class="checklist">
+<ul style="padding:0; margin:0;">
+  <li>An email you don't mind using for two accounts (Canva Developer + Vercel)</li>
+  <li>Your <span class="mono">Anthropic API key</span> (you already have this — same one you've been pasting in Settings)</li>
+  <li>About 20 minutes — most of it is waiting for sign-ups to verify</li>
+</ul>
+</div>
+
+<h2>Step 1 of 7 — Create a Canva Developer app</h2>
+
+<div class="step">
+  <div class="num">1</div>
+  <div class="body">
+    <h3>Go to the Canva Developer Portal</h3>
+    <p>Open <a href="https://www.canva.com/developers/apps" target="_blank">canva.com/developers/apps</a> in Chrome. Sign in with your normal Canva account (free works).</p>
+    <p>Click <strong>Create app</strong>. App type: <span class="pill">Integration</span>.</p>
+    <p>Name it <code>Next-Flow LinkedIn OS</code>. The other fields can stay default for now.</p>
+  </div>
+</div>
+
+<div class="step">
+  <div class="num">2</div>
+  <div class="body">
+    <h3>Copy the Client ID and Client Secret</h3>
+    <p>After creating the app you'll see two long strings. Copy <strong>both</strong> and paste them in a notes app — you'll need them in Step 5.</p>
+    <p class="mono" style="font-size:12px;">Client ID looks like: OC-xxxxx-xxx-xxxx</p>
+    <p class="mono" style="font-size:12px;">Client Secret looks like: cnvc-xxxxxxxxxxxxxxxx</p>
+    <p><span class="pill pill-warn">Heads up</span> Canva shows the secret only once. If you close the page without copying, you can regenerate.</p>
+  </div>
+</div>
+
+<div class="step">
+  <div class="num">3</div>
+  <div class="body">
+    <h3>Set scopes</h3>
+    <p>In the app's Scopes/Permissions section, enable: <code>asset:read</code> · <code>asset:write</code> · <code>design:content:read</code> · <code>design:content:write</code> · <code>design:meta:read</code>.</p>
+    <p>Save. Leave the redirect URI blank for now — you'll come back and fill it in after Vercel deploys (Step 6).</p>
+  </div>
+</div>
+
+<h2>Step 2 of 7 — Push this folder to GitHub</h2>
+
+<div class="step">
+  <div class="num">4</div>
+  <div class="body">
+    <h3>Use GitHub Desktop (zero terminal)</h3>
+    <p>Install <a href="https://desktop.github.com/" target="_blank">GitHub Desktop</a> if you don't have it. Sign in (or create a free GitHub account).</p>
+    <p>In GitHub Desktop: <strong>File → Add Local Repository</strong> → pick this folder: <code>Documents/Claude/Projects/Next-flow content system AI AGENT/nextflow-os-vercel</code>.</p>
+    <p>GitHub Desktop will say "this folder isn't a repository — would you like to create one?" → <strong>Yes</strong>.</p>
+    <p>Then click <strong>Publish repository</strong>. Name: <code>nextflow-os</code>. <strong>Uncheck</strong> "Keep this code private" if you want — either works.</p>
+    <p>Once published you'll have a GitHub URL like <code>github.com/your-username/nextflow-os</code>.</p>
+  </div>
+</div>
+
+<h2>Step 3 of 7 — Deploy to Vercel</h2>
+
+<div class="step">
+  <div class="num">5</div>
+  <div class="body">
+    <h3>Sign up at Vercel</h3>
+    <p>Go to <a href="https://vercel.com/signup" target="_blank">vercel.com/signup</a> → click <strong>Continue with GitHub</strong>. Authorize Vercel.</p>
+    <p>On the Vercel dashboard, click <strong>Add New… → Project</strong>. Find your <code>nextflow-os</code> repo → click <strong>Import</strong>.</p>
+    <p>Before clicking Deploy, expand <strong>Environment Variables</strong> and paste:</p>
+    <div class="pre-block">CANVA_CLIENT_ID = (the Client ID from step 2)
+CANVA_CLIENT_SECRET = (the Client Secret from step 2)
+COOKIE_SECRET = (any 50+ char random string — generate one at
+              https://generate-secret.vercel.app/64)
+ANTHROPIC_API_KEY = (your Anthropic key — sk-ant-...)</div>
+    <p>Click <strong>Deploy</strong>. Wait ~90 seconds.</p>
+  </div>
+</div>
+
+<div class="step">
+  <div class="num">6</div>
+  <div class="body">
+    <h3>Copy your Vercel URL</h3>
+    <p>When the deploy finishes, Vercel shows your URL — e.g. <code>https://nextflow-os-haris.vercel.app</code>. Click the URL — your OS should open.</p>
+    <p>Copy that URL — you need it for the next step.</p>
+  </div>
+</div>
+
+<h2>Step 4 of 7 — Finish the Canva config</h2>
+
+<div class="step">
+  <div class="num">7</div>
+  <div class="body">
+    <h3>Add the redirect URI to your Canva app</h3>
+    <p>Go back to your Canva developer app (<a href="https://www.canva.com/developers/apps" target="_blank">canva.com/developers/apps</a>) → open the app → find <strong>Authentication</strong> or <strong>Redirect URLs</strong>.</p>
+    <p>Add this URL (replace with your real Vercel domain):</p>
+    <div class="pre-block">https://YOUR-VERCEL-URL.vercel.app/api/canva/auth/callback</div>
+    <p>Save. <strong>This step is critical</strong> — without the exact redirect URI, Canva will reject the auth.</p>
+    <p>Optional but recommended: back in Vercel project settings → Environment Variables → add <code>PUBLIC_URL = https://YOUR-VERCEL-URL.vercel.app</code> → redeploy.</p>
+  </div>
+</div>
+
+<h2>Step 5 of 7 — Test it</h2>
+
+<div class="checklist">
+<ul style="padding:0; margin:0;">
+  <li>Open your Vercel URL in Chrome.</li>
+  <li>Click <strong>Settings</strong> top right → you should see <strong>Canva not connected</strong>.</li>
+  <li>Click <strong>Connect Canva</strong> → a popup opens to Canva → authorize → popup closes → status changes to <strong>Canva connected ✓</strong>.</li>
+  <li>Go to <strong>Create</strong> → write a story → Generate 4 Variations → pick a carousel one → click <strong>🎨 Design graphic</strong>.</li>
+  <li>In Designer: upload 2-3 photos → set slide count → click <strong>Generate slides</strong>.</li>
+  <li>When slides render, click <strong>☁ Push slides to Canva</strong>.</li>
+  <li>Wait ~15-30 seconds while each slide uploads.</li>
+  <li>Click <strong>→ Open design in Canva</strong> → your design opens in Canva, editable.</li>
+</ul>
+</div>
+
+<div class="callout">
+  <strong>If the Canva push fails:</strong> the most common cause is the redirect URI in your Canva app not matching your Vercel URL exactly (including <code>/api/canva/auth/callback</code> at the end). Double-check that. The second most common is forgetting to set <code>COOKIE_SECRET</code> in Vercel env vars.
+</div>
+
+<h2>Done</h2>
+
+<p>From now on, every time you want to use the OS, just open your Vercel URL. Bookmark it. No terminal, no installs, no commands — it just works.</p>
+
+<p style="margin-top:24px; padding-top:18px; border-top:1px solid var(--border); font-size:12px; color:var(--ink-soft); font-family:'DM Mono',monospace; text-transform:uppercase; letter-spacing:0.08em;">Next-Flow LinkedIn OS · v1.0 hosted · next-flow.de</p>
+
+</body>
+</html>
